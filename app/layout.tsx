@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import BottomNav from "@/components/BottomNav";
 import "./globals.css";
 
 // Font có đủ dấu tiếng Việt
@@ -14,14 +13,11 @@ export const metadata: Metadata = {
   description: "Ôn từ vựng IELTS theo phương pháp lặp lại ngắt quãng",
 };
 
+// Layout gốc dùng chung cho mọi trang (kể cả trang đăng nhập)
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="vi" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full bg-slate-50 text-slate-900">
-        {/* pb-24 chừa chỗ để nội dung không bị thanh điều hướng che */}
-        <main className="mx-auto max-w-md px-4 pt-6 pb-24">{children}</main>
-        <BottomNav />
-      </body>
+      <body className="min-h-full bg-slate-50 text-slate-900">{children}</body>
     </html>
   );
 }

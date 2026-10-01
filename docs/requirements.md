@@ -112,6 +112,7 @@ Mỗi dòng dưới đây là một test case. Story chỉ được coi là xong
 | Mã | Quy tắc |
 | --- | --- |
 | BR-00 | "Hôm nay" luôn tính theo múi giờ **Asia/Ho_Chi_Minh** (UTC+7). Server Vercel và Postgres chạy giờ UTC, nên app phải tự tính ngày rồi truyền `due_date` khi thêm/cập nhật từ và khi lọc "đến hạn hôm nay"; không dựa vào `current_date` của database |
+| BR-13 | **Magic link.** a) Link đăng nhập có hiệu lực **1 giờ** kể từ lúc gửi và chỉ dùng được **1 lần**; link hết hạn hoặc đã dùng thì xử lý theo AC-01.4. b) Sau mỗi lần gửi thành công, nút gửi bị khoá **60 giây** và hiện đếm ngược từ "Gửi lại sau 60 giây" giảm dần về 1; hết đếm ngược thì nút bấm lại được. c) Khi Supabase từ chối vì gửi quá nhiều, hiện thông báo tiếng Việt: "Bạn đã yêu cầu quá nhiều link. Vui lòng thử lại sau ít phút." (không hiện lỗi tiếng Anh gốc). d) Thông báo gửi thành công có nhắc: "Link có hiệu lực trong 1 giờ." |
 
 ### 4.2 Thuật toán SRS (SM-2 rút gọn)
 
