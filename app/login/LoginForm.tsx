@@ -16,6 +16,8 @@ export default function LoginForm({ resend }: { resend: boolean }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [secondsLeft, setSecondsLeft] = useState(0);
+  // AC-01.4: khung báo link hết hạn chỉ hiện tới khi gửi link mới thành công
+  const [showLinkError, setShowLinkError] = useState(resend);
 
   // BR-13b: đếm ngược mỗi giây cho tới 0
   useEffect(() => {
@@ -63,6 +65,9 @@ export default function LoginForm({ resend }: { resend: boolean }) {
     }
 
     setStatus({ kind: "sent", email: value });
+    setShowLinkError(false);
+    // Bỏ ?error=link trên thanh địa chỉ để tải lại trang không hiện lại thông báo cũ
+    window.history.replaceState(null, "", "/login");
     setSecondsLeft(COOLDOWN_SECONDS);
   }
 
@@ -78,6 +83,12 @@ export default function LoginForm({ resend }: { resend: boolean }) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="mt-6 flex flex-col gap-3">
+      {/* AC-01.4: link đã dùng hoặc hết hạn */}
+      {showLinkError && (
+        <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+          Link đăng nhập đã hết hạn hoặc đã được dùng. Nhập email để nhận link mới.
+        </p>
+      )}
       <label htmlFor="email" className="text-sm font-medium">
         Email
       </label>
