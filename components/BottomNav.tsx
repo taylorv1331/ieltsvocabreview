@@ -19,7 +19,9 @@ export default function BottomNav() {
     <nav className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
       <ul className="mx-auto flex max-w-md">
         {items.map((item) => {
-          const active = pathname === item.href;
+          // Trang phiên ôn /review cũng thuộc mục "Ôn tập"
+          const active =
+            pathname === item.href || (item.href === "/" && pathname.startsWith("/review"));
           return (
             <li key={item.href} className="flex-1">
               <Link

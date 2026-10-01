@@ -51,15 +51,13 @@ export default async function ReviewPage() {
       <h1 className="text-2xl font-bold">Ôn tập hôm nay</h1>
       <p className="mt-1 text-slate-600">{dueWords.length} từ cần ôn</p>
 
-      {/* US-04 sẽ bật nút này để mở thẻ theo đúng thứ tự danh sách */}
-      <button
-        type="button"
-        disabled
-        className="mt-4 min-h-11 w-full rounded-lg bg-slate-300 font-semibold text-slate-600"
+      {/* US-04: mở phiên ôn theo đúng thứ tự danh sách bên dưới */}
+      <Link
+        href="/review"
+        className="mt-4 flex min-h-11 w-full items-center justify-center rounded-lg bg-blue-600 font-semibold text-white active:bg-blue-700"
       >
         Bắt đầu ôn
-      </button>
-      <p className="mt-1 text-center text-xs text-slate-500">Sắp có (US-04)</p>
+      </Link>
 
       {/* AC-03.1: chỉ hiện từ vựng, không hiện nghĩa để không lộ đáp án */}
       <ul className="mt-6 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">

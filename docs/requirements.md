@@ -74,7 +74,7 @@ Mỗi dòng dưới đây là một test case. Story chỉ được coi là xong
 - AC-03.2 — Given không còn từ nào đến hạn, Then hiện thông báo "Xong bài hôm nay" và ngày ôn kế tiếp.
 
 **US-04 — Chấm mức nhớ**
-- AC-04.1 — Given đang xem mặt trước thẻ (chỉ có từ), When bấm "Xem đáp án", Then hiện nghĩa, ví dụ và 4 nút: Quên / Khó / Nhớ / Dễ.
+- AC-04.1 — Given đang xem mặt trước thẻ (chỉ có từ), When bấm "Xem đáp án", Then hiện nghĩa, từ loại, định nghĩa tiếng Anh, ví dụ, collocation, ghi chú (ô trống thì ẩn) và 4 nút: Quên / Khó / Nhớ / Dễ.
 - AC-04.2 — Given bấm một nút, Then ngày ôn tiếp theo được tính theo BR-01 → BR-05 và một dòng lịch sử ôn được lưu vào `reviews`.
 - AC-04.3 — Given bấm "Quên", Then từ đó quay lại cuối phiên ôn hôm nay.
 
