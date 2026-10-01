@@ -1,0 +1,10 @@
+import { createBrowserClient } from "@supabase/ssr";
+
+// Supabase client dùng trong Client Component (code chạy trên trình duyệt).
+// Chỉ dùng URL + anon key công khai; phân quyền dữ liệu do RLS trong database đảm nhận.
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+}
