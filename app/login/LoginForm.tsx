@@ -44,6 +44,8 @@ export default function LoginForm({ resend }: { resend: boolean }) {
     });
 
     if (error) {
+      // Ghi lỗi gốc vào Console (F12) để dễ tìm nguyên nhân; giao diện chỉ hiện tiếng Việt
+      console.error("signInWithOtp:", error);
       // BR-13c: quá giới hạn gửi → thông báo tiếng Việt, không hiện lỗi gốc
       const tooMany =
         error.status === 429 ||
