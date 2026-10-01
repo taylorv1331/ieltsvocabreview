@@ -1,5 +1,10 @@
-import ComingSoon from "@/components/ComingSoon";
+import WordForm from "./WordForm";
 
 export default function NewWordPage() {
-  return <ComingSoon title="Thêm từ" story="US-02" />;
+  return (
+    <section>
+      <h1 className="text-2xl font-bold">Thêm từ</h1>
+      <WordForm />
+    </section>
+  );
 }
