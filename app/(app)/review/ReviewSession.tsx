@@ -33,8 +33,11 @@ const RATING_FEEDBACK: Record<Rating, string> = {
   3: "Thật xuất sắc, you're the best 🤩",
 };
 
-// Thời gian hiện câu phản hồi (mili-giây)
-const FEEDBACK_MS = 3500;
+// Sau khi chấm: giữ màn hình đáp án + câu phản hồi trong 3 giây rồi mới sang thẻ tiếp theo
+const ADVANCE_MS = 3000;
+
+// Kết quả vừa chấm, đang chờ chuyển thẻ
+type Pending = { rating: Rating; nextQueue: DueWord[] };
 
 export default function ReviewSession({ initialCards }: { initialCards: DueWord[] }) {
   const router = useRouter();
@@ -44,25 +47,28 @@ export default function ReviewSession({ initialCards }: { initialCards: DueWord[
   const [showAnswer, setShowAnswer] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Câu phản hồi đang hiện; `id` tăng mỗi lần chấm để bộ đếm giờ chạy lại từ đầu
-  const [feedback, setFeedback] = useState<{ id: number; rating: Rating } | null>(null);
+  const [pending, setPending] = useState<Pending | null>(null);
 
-  // Tự ẩn câu phản hồi sau FEEDBACK_MS
+  // Hết 3 giây → sang thẻ tiếp theo (hoặc kết thúc phiên nếu đã hết thẻ)
   useEffect(() => {
-    if (!feedback) return;
-    const timer = setTimeout(() => setFeedback(null), FEEDBACK_MS);
+    if (!pending) return;
+    const timer = setTimeout(() => {
+      if (pending.nextQueue.length === 0) {
+        // Ôn hết → về trang Ôn tập để thấy "Xong bài hôm nay" (AC-03.2)
+        router.replace("/");
+        router.refresh();
+        return;
+      }
+      setDone((d) => d + 1);
+      setShowAnswer(false);
+      setQueue(pending.nextQueue);
+      setPending(null);
+    }, ADVANCE_MS);
     return () => clearTimeout(timer);
-  }, [feedback]);
+  }, [pending, router]);
 
   const card = queue[0];
-  if (!card) {
-    return (
-      <>
-        <FeedbackToast feedback={feedback} />
-        <p className="mt-10 text-center text-slate-500">Đang kết thúc phiên ôn…</p>
-      </>
-    );
-  }
+  if (!card) return null;
 
   async function handleRate(rating: Rating) {
     setSaving(true);
@@ -77,24 +83,14 @@ export default function ReviewSession({ initialCards }: { initialCards: DueWord[
 
     const rest = queue.slice(1);
     // AC-04.3: Quên → đưa thẻ xuống cuối phiên hôm nay
-    const nextQueue = rating === 0 ? [...rest, card] : rest;
-    setDone((d) => d + 1);
-    setShowAnswer(false);
-    setQueue(nextQueue);
-    setFeedback({ id: done, rating }); // done khác nhau ở mỗi lần chấm → làm mã riêng
-
-    if (nextQueue.length === 0) {
-      // Ôn hết → chờ người học đọc câu phản hồi, rồi về trang Ôn tập để thấy "Xong bài hôm nay" (AC-03.2)
-      setTimeout(() => {
-        router.replace("/");
-        router.refresh();
-      }, 1800);
-    }
+    setPending({ rating, nextQueue: rating === 0 ? [...rest, card] : rest });
   }
+
+  // Khoá 4 nút khi đang lưu hoặc đang hiện câu phản hồi (tránh chấm 2 lần)
+  const locked = saving || pending !== null;
 
   return (
     <section className="mx-auto max-w-xl">
-      <FeedbackToast feedback={feedback} />
       <p className="text-sm text-slate-500">
         Thẻ {done + 1}/{done + queue.length}
       </p>
@@ -126,19 +122,38 @@ export default function ReviewSession({ initialCards }: { initialCards: DueWord[
         // AC-04.1: 4 nút Quên / Khó / Nhớ / Dễ
         <>
           <div className="mt-4 grid grid-cols-4 gap-2">
-            {RATINGS.map((r) => (
-              <button
-                key={r.value}
-                type="button"
-                disabled={saving}
-                onClick={() => handleRate(r.value)}
-                className={`min-h-12 rounded-lg border font-semibold disabled:opacity-50 ${RATING_STYLES[r.value]}`}
-              >
-                {r.label}
-              </button>
-            ))}
+            {RATINGS.map((r) => {
+              // Đang hiện phản hồi: nút vừa chọn giữ màu + viền đậm, 3 nút còn lại mờ đi
+              const chosen = pending?.rating === r.value;
+              const dimmed = pending !== null && !chosen;
+              return (
+                <button
+                  key={r.value}
+                  type="button"
+                  disabled={locked}
+                  aria-pressed={chosen}
+                  onClick={() => handleRate(r.value)}
+                  className={`min-h-12 rounded-lg border font-semibold ${RATING_STYLES[r.value]} ${
+                    chosen ? "ring-2 ring-current" : ""
+                  } ${dimmed ? "opacity-30" : ""} ${saving ? "opacity-50" : ""}`}
+                >
+                  {r.label}
+                </button>
+              );
+            })}
           </div>
-          <RatingGuide />
+
+          {/* Câu phản hồi hiện ngay dưới 4 nút; chưa chấm thì hiện chú thích */}
+          {pending ? (
+            <p
+              role="status"
+              className={`mt-3 rounded-xl border px-4 py-3 text-center font-medium ${RATING_STYLES[pending.rating]}`}
+            >
+              {RATING_FEEDBACK[pending.rating]}
+            </p>
+          ) : (
+            <RatingGuide />
+          )}
         </>
       )}
     </section>
@@ -215,24 +230,5 @@ function RatingGuide() {
         ))}
       </dl>
     </details>
-  );
-}
-
-// Dải thông báo nổi phía trên (không đẩy thẻ xuống), cùng màu pastel với nút vừa chấm
-function FeedbackToast({ feedback }: { feedback: { id: number; rating: Rating } | null }) {
-  return (
-    <div
-      aria-live="polite"
-      className="pointer-events-none fixed inset-x-4 top-4 z-20 mx-auto max-w-xl md:top-20"
-    >
-      {feedback && (
-        <p
-          key={feedback.id}
-          className={`rounded-xl border px-4 py-3 text-center font-medium shadow-md ${RATING_STYLES[feedback.rating]}`}
-        >
-          {RATING_FEEDBACK[feedback.rating]}
-        </p>
-      )}
-    </div>
   );
 }
