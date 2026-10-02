@@ -52,7 +52,7 @@ export default function ReviewSession({ initialCards }: { initialCards: DueWord[
   }
 
   return (
-    <section>
+    <section className="mx-auto max-w-xl">
       <p className="text-sm text-slate-500">
         Thẻ {done + 1}/{done + queue.length}
       </p>

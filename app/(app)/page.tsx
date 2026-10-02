@@ -36,7 +36,7 @@ export default async function ReviewPage() {
             <p className="text-slate-600">Kho của bạn chưa có từ nào.</p>
             <Link
               href="/words/new"
-              className="mt-4 flex min-h-11 items-center justify-center rounded-lg bg-blue-600 font-semibold text-white active:bg-blue-700"
+              className="mx-auto mt-4 flex min-h-11 max-w-xs items-center justify-center rounded-lg bg-blue-600 font-semibold text-white active:bg-blue-700 md:hover:bg-blue-700"
             >
               Thêm từ đầu tiên
             </Link>
@@ -48,16 +48,21 @@ export default async function ReviewPage() {
 
   return (
     <section>
-      <h1 className="text-2xl font-bold">Ôn tập hôm nay</h1>
-      <p className="mt-1 text-slate-600">{dueWords.length} từ cần ôn</p>
+      {/* Web: tiêu đề bên trái, nút "Bắt đầu ôn" bên phải */}
+      <div className="md:flex md:items-end md:justify-between md:gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Ôn tập hôm nay</h1>
+          <p className="mt-1 text-slate-600">{dueWords.length} từ cần ôn</p>
+        </div>
 
-      {/* US-04: mở phiên ôn theo đúng thứ tự danh sách bên dưới */}
-      <Link
-        href="/review"
-        className="mt-4 flex min-h-11 w-full items-center justify-center rounded-lg bg-blue-600 font-semibold text-white active:bg-blue-700"
-      >
-        Bắt đầu ôn
-      </Link>
+        {/* US-04: mở phiên ôn theo đúng thứ tự danh sách bên dưới */}
+        <Link
+          href="/review"
+          className="mt-4 flex min-h-11 w-full items-center justify-center rounded-lg bg-blue-600 font-semibold text-white active:bg-blue-700 md:mt-0 md:w-auto md:px-8 md:hover:bg-blue-700"
+        >
+          Bắt đầu ôn
+        </Link>
+      </div>
 
       {/* AC-03.1: chỉ hiện từ vựng, không hiện nghĩa để không lộ đáp án */}
       <ul className="mt-6 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">

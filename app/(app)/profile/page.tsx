@@ -5,7 +5,7 @@ export default async function ProfilePage() {
   const { data } = await supabase.auth.getUser();
 
   return (
-    <section>
+    <section className="mx-auto max-w-xl">
       <h1 className="text-2xl font-bold">Hồ sơ</h1>
 
       <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
