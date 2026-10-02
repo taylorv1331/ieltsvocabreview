@@ -15,7 +15,7 @@ const EMPTY: WordInput = {
 };
 
 const inputClass =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-blue-500 focus:outline-none aria-[invalid=true]:border-red-500";
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-pink-500 focus:outline-none aria-[invalid=true]:border-red-500";
 
 export default function WordForm() {
   const [values, setValues] = useState<WordInput>(EMPTY);
@@ -182,7 +182,7 @@ export default function WordForm() {
       <button
         type="submit"
         disabled={saving}
-        className="min-h-11 rounded-lg bg-blue-600 font-semibold text-white active:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-600"
+        className="min-h-11 rounded-lg bg-pink-700 font-semibold text-white active:bg-pink-800 disabled:bg-slate-300 disabled:text-slate-600"
       >
         {saving ? "Đang lưu…" : "Lưu từ"}
       </button>

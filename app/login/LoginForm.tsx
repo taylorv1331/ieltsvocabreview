@@ -100,12 +100,12 @@ export default function LoginForm({ resend }: { resend: boolean }) {
         placeholder="ban@example.com"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-base focus:border-blue-500 focus:outline-none"
+        className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-base focus:border-pink-500 focus:outline-none"
       />
       <button
         type="submit"
         disabled={locked}
-        className="min-h-11 rounded-lg bg-blue-600 font-semibold text-white active:bg-blue-700 disabled:bg-slate-300 disabled:text-slate-600"
+        className="min-h-11 rounded-lg bg-pink-700 font-semibold text-white active:bg-pink-800 disabled:bg-slate-300 disabled:text-slate-600"
       >
         {label}
       </button>

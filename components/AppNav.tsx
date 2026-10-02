@@ -35,7 +35,7 @@ export default function AppNav() {
                   aria-current={active ? "page" : undefined}
                   className={`flex min-h-14 flex-col items-center justify-center gap-1 text-xs md:min-h-11 md:flex-row md:gap-2 md:rounded-lg md:px-3 md:text-sm ${
                     active
-                      ? "font-semibold text-blue-600 md:bg-blue-50"
+                      ? "font-semibold text-pink-700 md:bg-pink-50"
                       : "text-slate-500 md:hover:bg-slate-100"
                   }`}
                 >

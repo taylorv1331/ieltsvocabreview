@@ -36,7 +36,7 @@ export default async function ReviewPage() {
             <p className="text-slate-600">Kho của bạn chưa có từ nào.</p>
             <Link
               href="/words/new"
-              className="mx-auto mt-4 flex min-h-11 max-w-xs items-center justify-center rounded-lg bg-blue-600 font-semibold text-white active:bg-blue-700 md:hover:bg-blue-700"
+              className="mx-auto mt-4 flex min-h-11 max-w-xs items-center justify-center rounded-lg bg-pink-700 font-semibold text-white active:bg-pink-800 md:hover:bg-pink-800"
             >
               Thêm từ đầu tiên
             </Link>
@@ -58,7 +58,7 @@ export default async function ReviewPage() {
         {/* US-04: mở phiên ôn theo đúng thứ tự danh sách bên dưới */}
         <Link
           href="/review"
-          className="mt-4 flex min-h-11 w-full items-center justify-center rounded-lg bg-blue-600 font-semibold text-white active:bg-blue-700 md:mt-0 md:w-auto md:px-8 md:hover:bg-blue-700"
+          className="mt-4 flex min-h-11 w-full items-center justify-center rounded-lg bg-pink-700 font-semibold text-white active:bg-pink-800 md:mt-0 md:w-auto md:px-8 md:hover:bg-pink-800"
         >
           Bắt đầu ôn
         </Link>
