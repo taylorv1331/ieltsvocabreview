@@ -25,30 +25,30 @@ export async function rateWord(wordId: string, rating: number): Promise<RateResu
     return FAILED;
   }
 
-  const before = {
-    ease_factor: Number(word.ease_factor),
-    interval_days: word.interval_days,
-    repetitions: word.repetitions,
-  };
-  // BR-00: "hôm nay" theo giờ Việt Nam
-  const next = schedule(before, rating, todayVN());
-
-  const { error: updateError } = await supabase.from("words").update(next).eq("id", wordId);
-  if (updateError) {
-    console.error("rateWord/update:", updateError);
-    return FAILED;
-  }
-
-  // Nhật ký ôn (chỉ ghi thêm). user_id có default auth.uid()
-  const { error: logError } = await supabase.from("reviews").insert({
-    word_id: wordId,
+  // Thuật toán SRS tính ở lib/srs.ts (hàm thuần, có unit test); BR-00: "hôm nay" theo giờ Việt Nam
+  const next = schedule(
+    {
+      ease_factor: Number(word.ease_factor),
+      interval_days: word.interval_days,
+      repetitions: word.repetitions,
+    },
     rating,
-    interval_before: before.interval_days,
-    interval_after: next.interval_days,
+    todayVN(),
+  );
+
+  // Hàm Postgres rate_word (docs/schema.sql mục 10) cập nhật words VÀ ghi reviews
+  // trong cùng một giao dịch: cả hai cùng thành công hoặc cùng huỷ.
+  const { error } = await supabase.rpc("rate_word", {
+    p_word_id: wordId,
+    p_rating: rating,
+    p_ease_factor: next.ease_factor,
+    p_interval_days: next.interval_days,
+    p_repetitions: next.repetitions,
+    p_due_date: next.due_date,
   });
-  if (logError) {
-    // Lịch ôn đã cập nhật; chỉ thiếu một dòng lịch sử → ghi lỗi để kiểm tra, không chặn người học
-    console.error("rateWord/log:", logError);
+  if (error) {
+    console.error("rateWord/rpc:", error);
+    return FAILED;
   }
 
   return { ok: true };

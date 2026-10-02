@@ -161,3 +161,61 @@ values
   ('collocations',   'Collocation',         'Nhiều giá trị cách nhau bằng dấu ;',          false, 'list', null, 'mitigate the impact; mitigate risks', 6),
   ('topics',         'Chủ đề',              'Nhiều chủ đề cách nhau bằng dấu ; hoặc ,',    false, 'list', null, 'Environment; Health', 7),
   ('notes',          'Ghi chú',             null,                                         false, 'text', null, null, 8);
+
+-- =====================================================================
+-- Bổ sung ngày 2026-10-02 (rà soát sau US-04). Chỉ chạy phần dưới đây.
+-- =====================================================================
+
+-- 9. Siết policy reviews: word_id cũng phải thuộc về mình
+--    (nhất quán với word_topics; trước đây chỉ kiểm tra user_id)
+drop policy "own reviews" on public.reviews;
+create policy "own reviews" on public.reviews
+  for all using (auth.uid() = user_id)
+  with check (
+    auth.uid() = user_id
+    and exists (select 1 from public.words w where w.id = word_id and w.user_id = auth.uid())
+  );
+
+-- 10. Ghi kết quả chấm thẻ trong MỘT giao dịch (AC-04.2):
+--     cập nhật words và ghi reviews cùng thành công hoặc cùng huỷ.
+--     Thuật toán SRS vẫn tính ở lib/srs.ts; hàm này chỉ ghi kết quả.
+create function public.rate_word(
+  p_word_id       uuid,
+  p_rating        smallint,
+  p_ease_factor   numeric,
+  p_interval_days int,
+  p_repetitions   int,
+  p_due_date      date
+) returns void
+language plpgsql
+security invoker          -- chạy bằng quyền người đang đăng nhập → RLS vẫn áp dụng
+set search_path = ''
+as $$
+declare
+  v_interval_before int;
+begin
+  -- Khoá dòng của từ (của chính mình) để tránh 2 lần chấm chen nhau
+  select interval_days into v_interval_before
+  from public.words
+  where id = p_word_id and user_id = auth.uid()
+  for update;
+
+  if not found then
+    raise exception 'Không tìm thấy từ %', p_word_id;
+  end if;
+
+  update public.words
+  set ease_factor = p_ease_factor,
+      interval_days = p_interval_days,
+      repetitions = p_repetitions,
+      due_date = p_due_date
+  where id = p_word_id;
+
+  insert into public.reviews (word_id, rating, interval_before, interval_after)
+  values (p_word_id, p_rating, v_interval_before, p_interval_days);
+end;
+$$;
+
+-- Chỉ người đã đăng nhập mới gọi được
+revoke execute on function public.rate_word(uuid, smallint, numeric, int, int, date) from public, anon;
+grant execute on function public.rate_word(uuid, smallint, numeric, int, int, date) to authenticated;
