@@ -34,7 +34,7 @@ const RATING_FEEDBACK: Record<Rating, string> = {
 };
 
 // Thời gian hiện câu phản hồi (mili-giây)
-const FEEDBACK_MS = 2500;
+const FEEDBACK_MS = 3500;
 
 export default function ReviewSession({ initialCards }: { initialCards: DueWord[] }) {
   const router = useRouter();
