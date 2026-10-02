@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME } from "@/lib/app";
 
 // Font có đủ dấu tiếng Việt
 const inter = Inter({
@@ -9,8 +10,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Ôn từ IELTS",
-  description: "Ôn từ vựng IELTS theo phương pháp lặp lại ngắt quãng",
+  title: APP_NAME,
+  description: APP_DESCRIPTION,
+  // Tên dưới icon khi "Thêm vào MH chính" trên iPhone
+  appleWebApp: { title: APP_SHORT_NAME },
 };
 
 // Layout gốc dùng chung cho mọi trang (kể cả trang đăng nhập)

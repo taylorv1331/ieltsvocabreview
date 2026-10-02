@@ -1,4 +1,4 @@
-# Ôn từ IELTS (SRS)
+# Ôn từ vựng IELTS (SRS)
 
 Web app ôn từ vựng IELTS theo phương pháp lặp lại ngắt quãng.
 Yêu cầu: `docs/requirements.md` · Database: `docs/schema.sql` · Quy ước làm việc: `CLAUDE.md`.

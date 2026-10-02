@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpenCheck, CirclePlus, CircleUser, FileUp, LibraryBig } from "lucide-react";
+import { APP_NAME } from "@/lib/app";
 
 const items = [
   { href: "/", label: "Ôn tập", Icon: BookOpenCheck },
@@ -22,7 +23,7 @@ export default function AppNav() {
     <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:sticky md:top-0 md:bottom-auto md:border-t-0 md:border-b md:pb-0">
       <div className="mx-auto flex max-w-md md:max-w-3xl md:items-center md:px-4">
         <Link href="/" className="hidden shrink-0 text-lg font-bold text-slate-900 md:block">
-          Ôn từ IELTS
+          {APP_NAME}
         </Link>
         <ul className="flex flex-1 md:ml-auto md:flex-none md:gap-1 md:py-2">
           {items.map(({ href, label, Icon }) => {
