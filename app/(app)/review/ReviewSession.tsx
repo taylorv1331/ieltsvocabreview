@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Info } from "lucide-react";
 import type { DueWord } from "@/lib/review";
@@ -16,13 +16,25 @@ const RATING_STYLES: Record<Rating, string> = {
   3: "border-blue-200 bg-blue-100 text-blue-800 active:bg-blue-200 md:hover:bg-blue-200",
 };
 
-// Chú thích cho người học: khi nào chọn nút nào và app sẽ làm gì (BR-01 → BR-04)
-const RATING_HINTS: Record<Rating, { when: string; effect: string }> = {
-  0: { when: "Không nhớ ra, hoặc nhớ sai", effect: "gặp lại cuối phiên hôm nay" },
-  1: { when: "Nhớ ra nhưng phải nghĩ lâu", effect: "ôn lại sớm" },
-  2: { when: "Nhớ đúng sau chút suy nghĩ", effect: "khoảng ôn dãn ra bình thường" },
-  3: { when: "Nhìn là biết ngay", effect: "khoảng ôn dãn ra nhanh hơn" },
+// Chú thích "Nên chọn thẻ nào?": khi nào chọn nút nào
+const RATING_HINTS: Record<Rating, string> = {
+  0: "Không nhớ ra, hoặc nhớ sai",
+  1: "Nhớ ra nhưng phải nghĩ lâu",
+  2: "Nhớ đúng sau chút suy nghĩ",
+  3: "Nhìn là biết ngay",
 };
+
+// Câu phản hồi hiện sau khi chấm (ứng với BR-01 → BR-04).
+// "you're the best" là ngoại lệ tiếng Anh có chủ ý — xem CLAUDE.md
+const RATING_FEEDBACK: Record<Rating, string> = {
+  0: "Bạn chưa nhớ từ này rồi, xíu nữa mình sẽ ôn lại nha 🥲",
+  1: "Có vẻ từ này hơi khó với bạn ha, mình sẽ nhắc lại sớm thôi 🧐",
+  2: "Khá lắm, bạn dần đưa từ này vào vốn từ của mình rồi đó 🤓",
+  3: "Thật xuất sắc, you're the best 🤩",
+};
+
+// Thời gian hiện câu phản hồi (mili-giây)
+const FEEDBACK_MS = 2500;
 
 export default function ReviewSession({ initialCards }: { initialCards: DueWord[] }) {
   const router = useRouter();
@@ -32,9 +44,25 @@ export default function ReviewSession({ initialCards }: { initialCards: DueWord[
   const [showAnswer, setShowAnswer] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Câu phản hồi đang hiện; `id` tăng mỗi lần chấm để bộ đếm giờ chạy lại từ đầu
+  const [feedback, setFeedback] = useState<{ id: number; rating: Rating } | null>(null);
+
+  // Tự ẩn câu phản hồi sau FEEDBACK_MS
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = setTimeout(() => setFeedback(null), FEEDBACK_MS);
+    return () => clearTimeout(timer);
+  }, [feedback]);
 
   const card = queue[0];
-  if (!card) return <p className="mt-10 text-center text-slate-500">Đang kết thúc phiên ôn…</p>;
+  if (!card) {
+    return (
+      <>
+        <FeedbackToast feedback={feedback} />
+        <p className="mt-10 text-center text-slate-500">Đang kết thúc phiên ôn…</p>
+      </>
+    );
+  }
 
   async function handleRate(rating: Rating) {
     setSaving(true);
@@ -53,16 +81,20 @@ export default function ReviewSession({ initialCards }: { initialCards: DueWord[
     setDone((d) => d + 1);
     setShowAnswer(false);
     setQueue(nextQueue);
+    setFeedback({ id: done, rating }); // done khác nhau ở mỗi lần chấm → làm mã riêng
 
     if (nextQueue.length === 0) {
-      // Ôn hết → về trang Ôn tập để thấy "Xong bài hôm nay" (AC-03.2)
-      router.replace("/");
-      router.refresh();
+      // Ôn hết → chờ người học đọc câu phản hồi, rồi về trang Ôn tập để thấy "Xong bài hôm nay" (AC-03.2)
+      setTimeout(() => {
+        router.replace("/");
+        router.refresh();
+      }, 1800);
     }
   }
 
   return (
     <section className="mx-auto max-w-xl">
+      <FeedbackToast feedback={feedback} />
       <p className="text-sm text-slate-500">
         Thẻ {done + 1}/{done + queue.length}
       </p>
@@ -172,19 +204,35 @@ function RatingGuide() {
       </summary>
       <dl className="mt-1 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3">
         {RATINGS.map((r) => (
-          <div key={r.value} className="flex items-start gap-3">
+          <div key={r.value} className="flex items-center gap-3">
             <dt
               className={`w-14 shrink-0 rounded-md border px-2 py-0.5 text-center font-semibold ${RATING_STYLES[r.value]}`}
             >
               {r.label}
             </dt>
-            <dd className="text-slate-700">
-              {RATING_HINTS[r.value].when}
-              <span className="block text-slate-500">→ {RATING_HINTS[r.value].effect}</span>
-            </dd>
+            <dd className="text-slate-700">{RATING_HINTS[r.value]}</dd>
           </div>
         ))}
       </dl>
     </details>
+  );
+}
+
+// Dải thông báo nổi phía trên (không đẩy thẻ xuống), cùng màu pastel với nút vừa chấm
+function FeedbackToast({ feedback }: { feedback: { id: number; rating: Rating } | null }) {
+  return (
+    <div
+      aria-live="polite"
+      className="pointer-events-none fixed inset-x-4 top-4 z-20 mx-auto max-w-xl md:top-20"
+    >
+      {feedback && (
+        <p
+          key={feedback.id}
+          className={`rounded-xl border px-4 py-3 text-center font-medium shadow-md ${RATING_STYLES[feedback.rating]}`}
+        >
+          {RATING_FEEDBACK[feedback.rating]}
+        </p>
+      )}
+    </div>
   );
 }
