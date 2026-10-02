@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Info } from "lucide-react";
 import type { DueWord } from "@/lib/review";
@@ -35,6 +35,8 @@ const RATING_FEEDBACK: Record<Rating, string> = {
 
 // Sau khi chấm: giữ màn hình đáp án + câu phản hồi trong 3 giây rồi mới sang thẻ tiếp theo
 const ADVANCE_MS = 3000;
+// Từ đã Quên quay lại cuối phiên: hiện lời nhắc trong 3 giây
+const RETRY_NOTICE_MS = 3000;
 
 // Kết quả vừa chấm, đang chờ chuyển thẻ
 type Pending = { rating: Rating; nextQueue: DueWord[] };
@@ -45,49 +47,92 @@ export default function ReviewSession({ initialCards }: { initialCards: DueWord[
   const [queue, setQueue] = useState(initialCards);
   const [done, setDone] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Pending | null>(null);
+  // id của từ đang hiện lời nhắc "Cùng ôn lại từ này nào"
+  const [retryNoticeFor, setRetryNoticeFor] = useState<string | null>(null);
+  // Những từ đã bấm Quên trong phiên này (không cần vẽ lại giao diện nên dùng ref)
+  const forgottenIds = useRef(new Set<string>());
+  // Các bộ hẹn giờ đang chạy, để huỷ khi rời trang giữa chừng
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // Hết 3 giây → sang thẻ tiếp theo (hoặc kết thúc phiên nếu đã hết thẻ)
   useEffect(() => {
-    if (!pending) return;
-    const timer = setTimeout(() => {
-      if (pending.nextQueue.length === 0) {
-        // Ôn hết → về trang Ôn tập để thấy "Xong bài hôm nay" (AC-03.2)
-        router.replace("/");
-        router.refresh();
-        return;
-      }
-      setDone((d) => d + 1);
-      setShowAnswer(false);
-      setQueue(pending.nextQueue);
-      setPending(null);
-    }, ADVANCE_MS);
-    return () => clearTimeout(timer);
-  }, [pending, router]);
+    const list = timers.current;
+    return () => list.forEach(clearTimeout);
+  }, []);
+
+  function later(fn: () => void, ms: number) {
+    const timer = setTimeout(fn, ms);
+    timers.current.push(timer);
+    return timer;
+  }
+
+  // Sang thẻ tiếp theo, hoặc kết thúc phiên nếu đã hết thẻ
+  function advance(p: Pending) {
+    if (p.nextQueue.length === 0) {
+      // Ôn hết → về trang Ôn tập để thấy "Xong bài hôm nay" (AC-03.2)
+      router.replace("/");
+      router.refresh();
+      return;
+    }
+    setDone((d) => d + 1);
+    setShowAnswer(false);
+    setQueue(p.nextQueue);
+    setPending(null);
+
+    // AC-04.3: từ đã Quên quay lại cuối phiên → nhắc "Cùng ôn lại từ này nào"
+    const next = p.nextQueue[0];
+    if (forgottenIds.current.has(next.id)) {
+      setRetryNoticeFor(next.id);
+      later(() => setRetryNoticeFor((cur) => (cur === next.id ? null : cur)), RETRY_NOTICE_MS);
+    }
+  }
 
   const card = queue[0];
   if (!card) return null;
 
   async function handleRate(rating: Rating) {
-    setSaving(true);
-    setError(null);
-    const result = await rateWord(card.id, rating);
-    setSaving(false);
+    if (pending) return;
+    const rest = queue.slice(1);
+    // AC-04.3: Quên → đưa thẻ xuống cuối phiên hôm nay
+    const p: Pending = { rating, nextQueue: rating === 0 ? [...rest, card] : rest };
 
-    if (!result.ok) {
-      setError(result.message);
+    // Hiện câu phản hồi ngay, lưu kết quả chạy song song.
+    // Chỉ sang thẻ tiếp khi ĐỦ cả hai: đã hết 3 giây VÀ đã lưu xong.
+    setError(null);
+    setPending(p);
+    let saved = false;
+    let timeUp = false;
+    const timer = later(() => {
+      timeUp = true;
+      if (saved) advance(p);
+    }, ADVANCE_MS);
+
+    let ok = false;
+    let message = "Không lưu được kết quả. Vui lòng thử lại.";
+    try {
+      const result = await rateWord(card.id, rating);
+      ok = result.ok;
+      if (!result.ok) message = result.message;
+    } catch {
+      // Mất mạng hoặc server lỗi → dùng thông báo mặc định
+    }
+
+    if (!ok) {
+      // Lưu lỗi → ở lại thẻ này để bấm lại, không chuyển thẻ
+      clearTimeout(timer);
+      setPending(null);
+      setError(message);
       return;
     }
 
-    const rest = queue.slice(1);
-    // AC-04.3: Quên → đưa thẻ xuống cuối phiên hôm nay
-    setPending({ rating, nextQueue: rating === 0 ? [...rest, card] : rest });
+    if (rating === 0) forgottenIds.current.add(card.id);
+    saved = true;
+    if (timeUp) advance(p);
   }
 
-  // Khoá 4 nút khi đang lưu hoặc đang hiện câu phản hồi (tránh chấm 2 lần)
-  const locked = saving || pending !== null;
+  // Khoá 4 nút khi đang hiện câu phản hồi (tránh chấm 2 lần)
+  const locked = pending !== null;
 
   return (
     <section className="mx-auto max-w-xl">
@@ -111,13 +156,24 @@ export default function ReviewSession({ initialCards }: { initialCards: DueWord[
       )}
 
       {!showAnswer ? (
-        <button
-          type="button"
-          onClick={() => setShowAnswer(true)}
-          className="mt-4 min-h-12 w-full rounded-lg bg-slate-900 font-semibold text-white active:bg-slate-700"
-        >
-          Xem đáp án
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={() => setShowAnswer(true)}
+            className="mt-4 min-h-12 w-full rounded-lg bg-slate-900 font-semibold text-white active:bg-slate-700"
+          >
+            Xem đáp án
+          </button>
+          {/* AC-04.3: từ đã Quên quay lại cuối phiên */}
+          {retryNoticeFor === card.id && (
+            <p
+              role="status"
+              className="mt-3 rounded-xl border border-violet-200 bg-violet-100 px-4 py-3 text-center font-medium text-violet-800"
+            >
+              Cùng ôn lại từ này nào 💪
+            </p>
+          )}
+        </>
       ) : (
         // AC-04.1: 4 nút Quên / Khó / Nhớ / Dễ
         <>
@@ -135,7 +191,7 @@ export default function ReviewSession({ initialCards }: { initialCards: DueWord[
                   onClick={() => handleRate(r.value)}
                   className={`min-h-12 rounded-lg border font-semibold ${RATING_STYLES[r.value]} ${
                     chosen ? "ring-2 ring-current" : ""
-                  } ${dimmed ? "opacity-30" : ""} ${saving ? "opacity-50" : ""}`}
+                  } ${dimmed ? "opacity-30" : ""}`}
                 >
                   {r.label}
                 </button>
