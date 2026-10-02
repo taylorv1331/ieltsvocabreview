@@ -131,8 +131,8 @@ Quy tắc khi bấm từng nút (`rating`: 0 Quên, 1 Khó, 2 Nhớ, 3 Dễ):
 | --- | --- | --- | --- | --- |
 | BR-01 | Quên (0) | 0 ngày, ôn lại cuối phiên hôm nay | − 0.20 | về 0 |
 | BR-02 | Khó (1) | khoảng cũ × 1.2, tối thiểu 1 ngày | − 0.15 | + 1 |
-| BR-03 | Nhớ (2) | `repetitions` = 0 → 1 ngày; = 1 → 3 ngày; ≥ 2 → khoảng cũ × ease_factor | giữ nguyên | + 1 |
-| BR-04 | Dễ (3) | như Nhớ rồi × 1.3; lần đầu (`repetitions` = 0) là 4 ngày | + 0.15 | + 1 |
+| BR-03 | Nhớ (2) | `repetitions` = 0 → 1 ngày; = 1 → max(3, khoảng cũ) ngày (để khoảng ôn không co lại sau khi bấm Dễ lần đầu; sửa ngày 2026-10-02); ≥ 2 → khoảng cũ × ease_factor | giữ nguyên | + 1 |
+| BR-04 | Dễ (3) | như Nhớ rồi × 1.3 (dùng ease_factor cũ, làm tròn một lần ở cuối); lần đầu (`repetitions` = 0) là 4 ngày | + 0.15 | + 1 |
 | BR-05 | (mọi nút) | `due_date` = hôm nay + khoảng ôn mới; khoảng ôn làm tròn tới số nguyên gần nhất (`Math.round`) | kẹp tối thiểu 1.3 | — |
 
 Mỗi lần chấm còn ghi một dòng vào `reviews` gồm `rating`, `interval_before`, `interval_after`.

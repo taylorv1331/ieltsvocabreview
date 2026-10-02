@@ -87,6 +87,25 @@ describe("BR-04: Dễ", () => {
   });
 });
 
+describe("BR-03 (sửa 2026-10-02): lần hai lấy max(3, khoảng cũ) — khoảng ôn không co lại", () => {
+  const afterEasy = schedule(NEW_WORD, 3, "2026-10-01"); // Dễ lần đầu → 4 ngày
+
+  it("Dễ → Nhớ: 4 ngày → 4 ngày (trước đây bị co lại còn 3)", () => {
+    const result = schedule(afterEasy, 2, "2026-10-05");
+    expect(result.interval_days).toBe(4);
+    expect(result.due_date).toBe("2026-10-09");
+  });
+
+  it("Dễ → Dễ: 4 ngày → round(4 × 1.3) = 5 ngày (trước đây đứng yên ở 4)", () => {
+    expect(schedule(afterEasy, 3, "2026-10-05").interval_days).toBe(5);
+  });
+
+  it("Khó → Nhớ: khoảng cũ 1 < 3 → vẫn 3 ngày", () => {
+    const afterHard = schedule(NEW_WORD, 1, "2026-10-01");
+    expect(schedule(afterHard, 2, "2026-10-02").interval_days).toBe(3);
+  });
+});
+
 describe("BR-05: ease_factor không bao giờ thấp hơn 1.3", () => {
   it("Quên khi ease 1.4 → 1.3 (không phải 1.2)", () => {
     const state = { ease_factor: 1.4, interval_days: 5, repetitions: 3 };

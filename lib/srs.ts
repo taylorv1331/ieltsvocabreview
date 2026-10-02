@@ -33,8 +33,9 @@ export function schedule(state: SrsState, rating: Rating, today: string): SrsRes
   const { ease_factor: ease, interval_days: interval, repetitions: reps } = state;
 
   // Khoảng ôn kiểu "Nhớ" (chưa làm tròn) — BR-03:
-  // lần đầu 1 ngày, lần hai 3 ngày, từ lần ba trở đi = khoảng cũ × ease_factor
-  const goodInterval = reps === 0 ? 1 : reps === 1 ? 3 : interval * ease;
+  // lần đầu 1 ngày; lần hai max(3, khoảng cũ) để không co lại sau khi bấm Dễ lần đầu (4 ngày);
+  // từ lần ba trở đi = khoảng cũ × ease_factor
+  const goodInterval = reps === 0 ? 1 : reps === 1 ? Math.max(3, interval) : interval * ease;
 
   let nextInterval: number;
   let nextEase: number;

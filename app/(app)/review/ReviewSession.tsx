@@ -2,16 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown, Info } from "lucide-react";
 import type { DueWord } from "@/lib/review";
 import { RATINGS, type Rating } from "@/lib/srs";
 import { PARTS_OF_SPEECH } from "@/lib/words";
 import { rateWord } from "./actions";
 
+// Màu pastel: nền nhạt, chữ đậm cùng tông để vẫn dễ đọc
 const RATING_STYLES: Record<Rating, string> = {
-  0: "bg-red-600 active:bg-red-700",
-  1: "bg-amber-500 active:bg-amber-600",
-  2: "bg-green-600 active:bg-green-700",
-  3: "bg-blue-600 active:bg-blue-700",
+  0: "border-red-200 bg-red-100 text-red-800 active:bg-red-200 md:hover:bg-red-200",
+  1: "border-amber-200 bg-amber-100 text-amber-800 active:bg-amber-200 md:hover:bg-amber-200",
+  2: "border-green-200 bg-green-100 text-green-800 active:bg-green-200 md:hover:bg-green-200",
+  3: "border-blue-200 bg-blue-100 text-blue-800 active:bg-blue-200 md:hover:bg-blue-200",
+};
+
+// Chú thích cho người học: khi nào chọn nút nào và app sẽ làm gì (BR-01 → BR-04)
+const RATING_HINTS: Record<Rating, { when: string; effect: string }> = {
+  0: { when: "Không nhớ ra, hoặc nhớ sai", effect: "gặp lại cuối phiên hôm nay" },
+  1: { when: "Nhớ ra nhưng phải nghĩ lâu", effect: "ôn lại sớm" },
+  2: { when: "Nhớ đúng sau chút suy nghĩ", effect: "khoảng ôn dãn ra bình thường" },
+  3: { when: "Nhìn là biết ngay", effect: "khoảng ôn dãn ra nhanh hơn" },
 };
 
 export default function ReviewSession({ initialCards }: { initialCards: DueWord[] }) {
@@ -82,19 +92,22 @@ export default function ReviewSession({ initialCards }: { initialCards: DueWord[
         </button>
       ) : (
         // AC-04.1: 4 nút Quên / Khó / Nhớ / Dễ
-        <div className="mt-4 grid grid-cols-4 gap-2">
-          {RATINGS.map((r) => (
-            <button
-              key={r.value}
-              type="button"
-              disabled={saving}
-              onClick={() => handleRate(r.value)}
-              className={`min-h-12 rounded-lg font-semibold text-white disabled:opacity-50 ${RATING_STYLES[r.value]}`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="mt-4 grid grid-cols-4 gap-2">
+            {RATINGS.map((r) => (
+              <button
+                key={r.value}
+                type="button"
+                disabled={saving}
+                onClick={() => handleRate(r.value)}
+                className={`min-h-12 rounded-lg border font-semibold disabled:opacity-50 ${RATING_STYLES[r.value]}`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <RatingGuide />
+        </>
       )}
     </section>
   );
@@ -145,5 +158,33 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
       <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{label}</p>
       <div className="mt-1">{children}</div>
     </div>
+  );
+}
+
+// Chú thích ý nghĩa 4 nút, thu gọn được (mặc định đóng để không chiếm chỗ trên điện thoại)
+function RatingGuide() {
+  return (
+    <details className="group mt-3 text-sm">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-1.5 text-slate-500 [&::-webkit-details-marker]:hidden">
+        <Info aria-hidden size={16} />
+        Nên chọn thẻ nào?
+        <ChevronDown aria-hidden size={16} className="transition-transform group-open:rotate-180" />
+      </summary>
+      <dl className="mt-1 flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-3">
+        {RATINGS.map((r) => (
+          <div key={r.value} className="flex items-start gap-3">
+            <dt
+              className={`w-14 shrink-0 rounded-md border px-2 py-0.5 text-center font-semibold ${RATING_STYLES[r.value]}`}
+            >
+              {r.label}
+            </dt>
+            <dd className="text-slate-700">
+              {RATING_HINTS[r.value].when}
+              <span className="block text-slate-500">→ {RATING_HINTS[r.value].effect}</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </details>
   );
 }
