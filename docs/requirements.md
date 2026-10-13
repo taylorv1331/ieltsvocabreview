@@ -42,7 +42,7 @@ Ràng buộc rút ra:
 
 | ID | User story | Ưu tiên |
 | --- | --- | --- |
-| US-01 | Là người học, mình muốn đăng nhập bằng magic link gửi qua email (không cần mật khẩu), để từ vựng của mình được lưu riêng và dùng được trên mọi thiết bị | Must |
+| US-01 | Là người học, mình muốn đăng nhập bằng magic link hoặc mã 6 số gửi qua email (không cần mật khẩu), để từ vựng của mình được lưu riêng và dùng được trên mọi thiết bị | Must |
 | US-02 | Là người học, mình muốn thêm một từ kèm nghĩa, từ loại, câu ví dụ và collocation, để biết cách dùng chứ không chỉ biết nghĩa | Must |
 | US-03 | Là người học, mình muốn mỗi ngày chỉ thấy những từ đến hạn ôn, để không tốn thời gian vào từ đã nhớ chắc | Must |
 | US-04 | Là người học, mình muốn tự chấm mức nhớ của từng từ sau khi lật thẻ, để app tính lại lịch ôn cho phù hợp | Must |
@@ -63,6 +63,8 @@ Mỗi dòng dưới đây là một test case. Story chỉ được coi là xong
 - AC-01.3 — Given email chưa từng dùng, When bấm link lần đầu, Then tài khoản mới được tạo tự động (gộp đăng ký và đăng nhập làm một bước).
 - AC-01.4 — Given một link đã dùng hoặc đã hết hạn, When bấm lại, Then hiện thông báo và nút gửi link mới.
 - AC-01.5 — Given tài khoản A và B đều có từ, When A đăng nhập, Then A chỉ thấy từ của A.
+- AC-01.6 — Given đã bấm "Gửi link đăng nhập", When nhập đúng mã 6 số trong email vào ô "Mã đăng nhập" trên chính tab đó, Then vào thẳng app ngay trên tab đó, không mở tab mới. *(Change Request 2026-10-13)*
+- AC-01.7 — Given nhập mã sai, đã dùng hoặc đã hết hạn, Then hiện thông báo lỗi; vẫn nhập lại được hoặc gửi mã mới. *(Change Request 2026-10-13)*
 
 **US-02 — Thêm từ**
 - AC-02.1 — Given đang ở form thêm từ, When bỏ trống ô "Từ vựng" hoặc "Nghĩa tiếng Việt", Then không lưu được và hiện thông báo lỗi.
@@ -112,7 +114,7 @@ Mỗi dòng dưới đây là một test case. Story chỉ được coi là xong
 | Mã | Quy tắc |
 | --- | --- |
 | BR-00 | "Hôm nay" luôn tính theo múi giờ **Asia/Ho_Chi_Minh** (UTC+7). Server Vercel và Postgres chạy giờ UTC, nên app phải tự tính ngày rồi truyền `due_date` khi thêm/cập nhật từ và khi lọc "đến hạn hôm nay"; không dựa vào `current_date` của database |
-| BR-13 | **Magic link.** a) Link đăng nhập có hiệu lực **1 giờ** kể từ lúc gửi và chỉ dùng được **1 lần**; link hết hạn hoặc đã dùng thì xử lý theo AC-01.4. b) Sau mỗi lần gửi thành công, nút gửi bị khoá **60 giây** và hiện đếm ngược từ "Gửi lại sau 60 giây" giảm dần về 1; hết đếm ngược thì nút bấm lại được. c) Khi Supabase từ chối vì gửi quá nhiều, hiện thông báo tiếng Việt: "Bạn đã yêu cầu quá nhiều link. Vui lòng thử lại sau ít phút." (không hiện lỗi tiếng Anh gốc). d) Thông báo gửi thành công có nhắc: "Link có hiệu lực trong 1 giờ." e) Giới hạn gửi: mỗi email cách nhau tối thiểu 60 giây; toàn hệ thống tối đa **30 email/giờ**. f) Email đăng nhập gửi qua custom SMTP (Gmail), nội dung bằng tiếng Việt, link dạng `/auth/confirm?token_hash=…&type=email` để mở được trên thiết bị khác. *Mục a, e, f là cấu hình trên Supabase Dashboard (Authentication → Sign In / Providers → Email, Rate Limits, Emails), không nằm trong code; đổi cấu hình thì cập nhật lại BR này.* |
+| BR-13 | **Magic link và mã 6 số.** a) Email đăng nhập chứa **cả link và mã 6 số**; cả hai có hiệu lực **1 giờ** kể từ lúc gửi và chỉ dùng được **1 lần** — dùng một cách thì cách còn lại cũng hết hiệu lực. Link hoặc mã hết hạn/đã dùng thì xử lý theo AC-01.4 / AC-01.7 *(sửa 2026-10-13)*. b) Sau mỗi lần gửi thành công, nút gửi bị khoá **60 giây** và hiện đếm ngược từ "Gửi lại sau 60 giây" giảm dần về 1; hết đếm ngược thì nút bấm lại được. c) Khi Supabase từ chối vì gửi quá nhiều, hiện thông báo tiếng Việt: "Bạn đã yêu cầu quá nhiều link. Vui lòng thử lại sau ít phút." (không hiện lỗi tiếng Anh gốc). d) Thông báo gửi thành công có nhắc: "Link có hiệu lực trong 1 giờ." e) Giới hạn gửi: mỗi email cách nhau tối thiểu 60 giây; toàn hệ thống tối đa **30 email/giờ**. f) Email đăng nhập gửi qua custom SMTP (Gmail), nội dung bằng tiếng Việt, link dạng `/auth/confirm?token_hash=…&type=email` để mở được trên thiết bị khác. g) Giới hạn thử mã theo Supabase: tối đa 30 lần mỗi 5 phút cho mỗi địa chỉ IP *(thêm 2026-10-13)*. *Mục a, e, f, g là cấu hình trên Supabase Dashboard (Authentication → Sign In / Providers → Email, Rate Limits, Emails), không nằm trong code; đổi cấu hình thì cập nhật lại BR này.* |
 
 ### 4.2 Thuật toán SRS (SM-2 rút gọn)
 
