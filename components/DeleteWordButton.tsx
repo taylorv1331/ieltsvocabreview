@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteWord } from "@/app/(app)/words/actions";
+import { softHyphenate } from "@/lib/words";
 
 // AC-05.2: nút Xoá + hộp xác nhận (dùng thẻ <dialog> có sẵn của trình duyệt)
 export default function DeleteWordButton({ id, term }: { id: string; term: string }) {
@@ -42,8 +43,8 @@ export default function DeleteWordButton({ id, term }: { id: string; term: strin
         aria-labelledby="delete-title"
         className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl p-5 shadow-xl backdrop:bg-slate-900/40"
       >
-        <h2 id="delete-title" className="text-lg font-bold break-words">
-          Xoá từ &ldquo;{term}&rdquo;?
+        <h2 id="delete-title" className="term-wrap text-lg font-bold">
+          Xoá từ &ldquo;{softHyphenate(term)}&rdquo;?
         </h2>
         <p className="mt-2 text-sm text-slate-600">
           Không thể hoàn tác. Thống kê và chuỗi ngày học của bạn vẫn được giữ.

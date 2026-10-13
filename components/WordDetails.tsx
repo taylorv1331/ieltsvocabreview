@@ -1,4 +1,4 @@
-import { PARTS_OF_SPEECH, type WordContent } from "@/lib/words";
+import { PARTS_OF_SPEECH, softHyphenate, type WordContent } from "@/lib/words";
 
 // Hiện mọi thông tin của một từ, ô trống thì ẩn.
 // Dùng ở mặt sau thẻ ôn (AC-04.1) và trang chi tiết từ (US-05).
@@ -12,7 +12,7 @@ export default function WordDetails({ word: card }: { word: WordContent }) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-3">
-        <p className="text-2xl font-bold break-words">{card.term}</p>
+        <p lang="en" className="term-wrap text-2xl font-bold">{softHyphenate(card.term)}</p>
         {pos && <span className="shrink-0 text-sm text-slate-500">{pos}</span>}
       </div>
       <p className="text-lg">{card.meaning_vi}</p>

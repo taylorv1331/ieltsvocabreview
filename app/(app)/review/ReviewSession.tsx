@@ -7,6 +7,7 @@ import type { DueWord } from "@/lib/review";
 import { RATINGS, type Rating } from "@/lib/srs";
 import WordDetails from "@/components/WordDetails";
 import { rateWord } from "./actions";
+import { softHyphenate } from "@/lib/words";
 
 // Màu pastel: nền nhạt, chữ đậm cùng tông để vẫn dễ đọc
 const RATING_STYLES: Record<Rating, string> = {
@@ -143,7 +144,7 @@ export default function ReviewSession({ initialCards }: { initialCards: DueWord[
       <article className="mt-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         {!showAnswer ? (
           // AC-04.1: mặt trước chỉ có từ
-          <p className="py-12 text-center text-3xl font-bold break-words">{card.term}</p>
+          <p lang="en" className="term-wrap py-12 text-center text-3xl font-bold">{softHyphenate(card.term)}</p>
         ) : (
           <WordDetails word={card} />
         )}

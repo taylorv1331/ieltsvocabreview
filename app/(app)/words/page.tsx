@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import FlashMessage from "@/components/FlashMessage";
+import TruncatedText from "@/components/TruncatedText";
+import { softHyphenate } from "@/lib/words";
 
 export default async function WordsPage({ searchParams }: PageProps<"/words">) {
   const { deleted } = await searchParams;
@@ -46,11 +48,9 @@ export default async function WordsPage({ searchParams }: PageProps<"/words">) {
                 className="flex min-h-14 items-center gap-3 px-4 py-2 active:bg-slate-50 md:hover:bg-slate-50"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium break-words">{word.term}</p>
-                  {/* Nghĩa dài: cắt ở mép phải + "…"; rê chuột (máy tính) để xem đầy đủ */}
-                  <p className="truncate text-sm text-slate-500" title={word.meaning_vi}>
-                    {word.meaning_vi}
-                  </p>
+                  <p lang="en" className="term-wrap font-medium">{softHyphenate(word.term)}</p>
+                  {/* Nghĩa dài: cắt ở mép phải + "…"; rê chuột (máy tính) hiện ngay nghĩa đầy đủ */}
+                  <TruncatedText text={word.meaning_vi} className="text-sm text-slate-500" />
                 </div>
                 <ChevronRight aria-hidden size={18} className="shrink-0 text-slate-400" />
               </Link>

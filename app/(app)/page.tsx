@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { daysBetween, formatDateVN, todayVN } from "@/lib/date";
 import { getDueWords, getNextDueDate } from "@/lib/review";
+import { softHyphenate } from "@/lib/words";
 
 // "N ngày nữa" / "ngày mai" cho ngày ôn kế tiếp
 function relativeLabel(days: number) {
@@ -70,7 +71,7 @@ export default async function ReviewPage() {
           const overdue = daysBetween(word.due_date, today);
           return (
             <li key={word.id} className="flex min-h-11 items-center justify-between gap-3 px-4 py-2">
-              <span className="font-medium break-all">{word.term}</span>
+              <span lang="en" className="term-wrap font-medium">{softHyphenate(word.term)}</span>
               <span
                 className={`shrink-0 text-sm ${overdue > 0 ? "text-amber-700" : "text-slate-500"}`}
               >

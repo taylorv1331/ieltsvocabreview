@@ -3,3 +3,12 @@
 @theme inline {
   --font-sans: var(--font-inter);
 }
+
+/* Từ vựng tiếng Anh rất dài: cho xuống dòng và tự thêm dấu "-" ở cuối dòng theo từ điển tiếng Anh.
+   Phần tử dùng lớp này cần lang="en" để trình duyệt chọn đúng từ điển ngắt âm tiết. */
+.term-wrap {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}

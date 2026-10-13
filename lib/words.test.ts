@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collocationsToLines, normalizeCollocations, toWordInput } from "./words";
+import { collocationsToLines, normalizeCollocations, softHyphenate, toWordInput } from "./words";
 
 describe("Collocation: form ↔ database", () => {
   it("form (mỗi dòng một cụm) → lưu dạng \"a; b\" (BR-11)", () => {
@@ -42,5 +42,22 @@ describe("toWordInput: dữ liệu từ → giá trị ban đầu của form s�
       definition_en: "",
       notes: "",
     });
+  });
+});
+
+describe("softHyphenate (hiển thị từ rất dài)", () => {
+  const SHY = "­";
+  it("từ ngắn giữ nguyên", () => {
+    expect(softHyphenate("mitigate the impact")).toBe("mitigate the impact");
+  });
+  it("từ dài được chèn điểm ngắt mềm mỗi 6 chữ, bỏ đi thì vẫn là từ gốc", () => {
+    const word = "Pneumonoultramicroscopicsilicovolcanoconiosis";
+    const result = softHyphenate(word);
+    expect(result.split(SHY)[0]).toBe("Pneumo");
+    expect(result.replaceAll(SHY, "")).toBe(word);
+  });
+  it("không để dòng cuối chỉ còn 1–2 chữ", () => {
+    const parts = softHyphenate("abcdefghijklmnop").split(SHY); // 16 chữ → 6 + 10
+    expect(parts.at(-1)!.length).toBeGreaterThanOrEqual(3);
   });
 });
