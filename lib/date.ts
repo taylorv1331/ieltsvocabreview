@@ -37,3 +37,11 @@ export function formatDateVN(date: string): string {
   const [y, m, d] = date.split("-");
   return `${d}/${m}/${y}`;
 }
+
+// Mô tả một ngày so với hôm nay: "hôm nay", "ngày mai", "3 ngày nữa", "quá hạn 2 ngày"
+export function relativeDayLabel(today: string, date: string): string {
+  const days = daysBetween(today, date);
+  if (days === 0) return "hôm nay";
+  if (days === 1) return "ngày mai";
+  return days > 0 ? `${days} ngày nữa` : `quá hạn ${-days} ngày`;
+}

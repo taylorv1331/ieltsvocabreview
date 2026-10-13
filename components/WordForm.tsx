@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PARTS_OF_SPEECH, TERM_MAX_LENGTH, type WordInput } from "@/lib/words";
-import { addWord, checkDuplicate, type FieldErrors } from "./actions";
+import { addWord, checkDuplicate, updateWord, type FieldErrors } from "@/app/(app)/words/actions";
 
 const EMPTY: WordInput = {
   term: "",
@@ -17,8 +19,12 @@ const EMPTY: WordInput = {
 const inputClass =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base focus:border-pink-500 focus:outline-none aria-[invalid=true]:border-red-500";
 
-export default function WordForm() {
-  const [values, setValues] = useState<WordInput>(EMPTY);
+// Form dùng chung: thêm từ (US-02) và sửa từ (US-05).
+// Khi sửa: truyền `wordId` + `initial` (nội dung hiện tại của từ).
+export default function WordForm({ wordId, initial }: { wordId?: string; initial?: WordInput }) {
+  const router = useRouter();
+  const editing = Boolean(wordId);
+  const [values, setValues] = useState<WordInput>(initial ?? EMPTY);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [message, setMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -35,7 +41,8 @@ export default function WordForm() {
   // AC-02.2: báo trùng ngay khi rời ô "Từ vựng"
   async function handleTermBlur() {
     const term = values.term;
-    const warning = await checkDuplicate(term);
+    // Khi sửa, bỏ qua chính từ đang sửa
+    const warning = await checkDuplicate(term, wordId);
     // Bỏ qua kết quả nếu trong lúc chờ người dùng đã sửa sang từ khác
     if (warning && termRef.current?.value === term) {
       setErrors((e) => ({ ...e, term: warning }));
@@ -56,14 +63,21 @@ export default function WordForm() {
     }
 
     setSaving(true);
-    const result = await addWord(values);
-    setSaving(false);
+    const result = wordId ? await updateWord(wordId, values) : await addWord(values);
 
     if (!result.ok) {
+      setSaving(false);
       setErrors(result.fieldErrors ?? {});
       if (result.message) setMessage({ kind: "error", text: result.message });
       return;
     }
+
+    if (editing) {
+      // AC-05.1: lưu xong quay về trang chi tiết, thấy ngay nội dung mới
+      router.push(`/words/${result.id}?saved=1`);
+      return;
+    }
+    setSaving(false);
 
     // Lưu xong: xoá trắng form, báo thành công, đưa con trỏ về ô "Từ vựng" để thêm tiếp
     setValues(EMPTY);
@@ -184,8 +198,16 @@ export default function WordForm() {
         disabled={saving}
         className="min-h-11 rounded-lg bg-pink-700 font-semibold text-white active:bg-pink-800 disabled:bg-slate-300 disabled:text-slate-600"
       >
-        {saving ? "Đang lưu…" : "Lưu từ"}
+        {saving ? "Đang lưu…" : editing ? "Lưu thay đổi" : "Lưu từ"}
       </button>
+      {editing && (
+        <Link
+          href={`/words/${wordId}`}
+          className="flex min-h-11 items-center justify-center rounded-lg border border-slate-300 font-medium text-slate-700 active:bg-slate-100"
+        >
+          Huỷ
+        </Link>
+      )}
     </form>
   );
 }

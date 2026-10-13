@@ -219,3 +219,20 @@ $$;
 -- Chỉ người đã đăng nhập mới gọi được
 revoke execute on function public.rate_word(uuid, smallint, numeric, int, int, date) from public, anon;
 grant execute on function public.rate_word(uuid, smallint, numeric, int, int, date) to authenticated;
+
+-- =====================================================================
+-- Bổ sung ngày 2026-10-13 (rà soát ERD trước US-05). Chỉ chạy phần dưới đây.
+-- =====================================================================
+
+-- 11. Chủ đề không trùng, không phân biệt hoa thường (US-06, US-10)
+--     "Environment" và "environment" là cùng một chủ đề.
+create unique index topics_user_name_unique
+  on public.topics (user_id, lower(name));
+
+-- 12. Giữ lịch sử ôn khi xoá từ (AC-05.2 sửa 2026-10-13, phục vụ AC-07.2)
+--     Xoá từ → các dòng reviews vẫn còn, chỉ word_id chuyển thành trống (null).
+alter table public.reviews alter column word_id drop not null;
+alter table public.reviews drop constraint reviews_word_id_fkey;
+alter table public.reviews
+  add constraint reviews_word_id_fkey
+  foreign key (word_id) references public.words(id) on delete set null;

@@ -82,7 +82,7 @@ Mỗi dòng dưới đây là một test case. Story chỉ được coi là xong
 
 **US-05 — Sửa / xoá từ** *(AC do mình bổ sung khi code, theo cùng mẫu)*
 - AC-05.1 — Given đang xem một từ, When sửa nội dung và lưu, Then nội dung mới hiện ngay; trạng thái SRS giữ nguyên.
-- AC-05.2 — Given bấm "Xoá", Then app hỏi xác nhận; xác nhận xong thì từ, các liên kết chủ đề và lịch sử ôn của từ đó đều bị xoá.
+- AC-05.2 — Given bấm "Xoá", Then app hỏi xác nhận; xác nhận xong thì từ và các liên kết chủ đề của từ đó bị xoá. Lịch sử ôn (`reviews`) của từ được giữ lại nhưng không còn gắn với từ đã xoá, để số lượt ôn và streak (AC-07) không thay đổi. *(sửa 2026-10-13)*
 
 **US-06 — Chủ đề**
 - AC-06.1 — Given đang thêm hoặc sửa từ, Then chọn được 0, 1 hoặc nhiều chủ đề, và tạo được chủ đề mới ngay tại đó.

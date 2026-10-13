@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, daysBetween, formatDateVN, todayVN } from "./date";
+import { addDays, daysBetween, formatDateVN, relativeDayLabel, todayVN } from "./date";
 
 describe("BR-00: todayVN() tính theo giờ Việt Nam (UTC+7)", () => {
   it("23:59 ngày 30/09 giờ VN (16:59 UTC) vẫn là 2026-09-30", () => {
@@ -35,5 +35,16 @@ describe("daysBetween", () => {
 describe("formatDateVN", () => {
   it("2026-10-02 → 02/10/2026", () => {
     expect(formatDateVN("2026-10-02")).toBe("02/10/2026");
+  });
+});
+
+describe("relativeDayLabel (trang chi tiết từ: Lần ôn tới)", () => {
+  it.each([
+    ["2026-10-13", "hôm nay"],
+    ["2026-10-14", "ngày mai"],
+    ["2026-10-16", "3 ngày nữa"],
+    ["2026-10-11", "quá hạn 2 ngày"],
+  ])("%s → %s", (date, label) => {
+    expect(relativeDayLabel("2026-10-13", date)).toBe(label);
   });
 });

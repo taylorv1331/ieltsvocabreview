@@ -27,8 +27,11 @@ export default function AppNav() {
         </Link>
         <ul className="flex flex-1 md:ml-auto md:flex-none md:gap-1 md:py-2">
           {items.map(({ href, label, Icon }) => {
-            // Trang phiên ôn /review cũng thuộc mục "Ôn tập"
-            const active = pathname === href || (href === "/" && pathname.startsWith("/review"));
+            // /review thuộc "Ôn tập"; trang chi tiết và trang sửa từ thuộc "Kho từ"
+            const active =
+              pathname === href ||
+              (href === "/" && pathname.startsWith("/review")) ||
+              (href === "/words" && pathname.startsWith("/words/") && pathname !== "/words/new");
             return (
               <li key={href} className="flex-1 md:flex-none">
                 <Link
