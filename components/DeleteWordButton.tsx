@@ -47,7 +47,7 @@ export default function DeleteWordButton({ id, term }: { id: string; term: strin
           Xoá từ &ldquo;{softHyphenate(term)}&rdquo;?
         </h2>
         <p className="mt-2 text-sm text-slate-600">
-          Không thể hoàn tác. Thống kê và chuỗi ngày học của bạn vẫn được giữ.
+          Không thể hoàn tác, hãy chắc chắn bạn đã nằm lòng từ này trước khi xoá. Thống kê và chuỗi ngày học của bạn vẫn được giữ.
         </p>
         {error && (
           <p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
