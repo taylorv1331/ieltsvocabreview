@@ -236,3 +236,61 @@ alter table public.reviews drop constraint reviews_word_id_fkey;
 alter table public.reviews
   add constraint reviews_word_id_fkey
   foreign key (word_id) references public.words(id) on delete set null;
+
+-- =====================================================================
+-- Bổ sung ngày 2026-10-14 (lưu trữ từ đã xoá). Chỉ chạy phần dưới đây.
+-- =====================================================================
+
+-- 13. DELETED_WORDS: bản lưu trữ của từ đã xoá (AC-05.2 sửa 2026-10-14)
+--     MVP không có màn hình xem; chủ app tra trong Supabase khi cần.
+create table public.deleted_words (
+  id              uuid primary key,              -- giữ nguyên id của từ trước khi xoá
+  user_id         uuid not null references auth.users(id) on delete cascade,
+  term            text not null,
+  part_of_speech  text,
+  meaning_vi      text not null,
+  definition_en   text,
+  example         text,
+  collocations    text,
+  notes           text,
+  ease_factor     numeric(4,2) not null,
+  interval_days   int not null,
+  repetitions     int not null,
+  due_date        date not null,
+  topics          text[] not null default '{}',  -- tên các chủ đề tại thời điểm xoá
+  created_at      timestamptz not null,          -- ngày thêm từ ban đầu
+  deleted_at      timestamptz not null default now()
+);
+create index deleted_words_user_idx on public.deleted_words (user_id, deleted_at);
+
+alter table public.deleted_words enable row level security;
+-- Chỉ xem được từ đã xoá của mình. Không có policy ghi → chỉ trigger bên dưới ghi được.
+create policy "own deleted words" on public.deleted_words
+  for select using (auth.uid() = user_id);
+
+-- Trước khi xoá một từ: chép toàn bộ sang deleted_words (kể cả tên chủ đề)
+create function public.archive_deleted_word()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  insert into public.deleted_words (
+    id, user_id, term, part_of_speech, meaning_vi, definition_en, example, collocations, notes,
+    ease_factor, interval_days, repetitions, due_date, topics, created_at)
+  values (
+    old.id, old.user_id, old.term, old.part_of_speech, old.meaning_vi, old.definition_en,
+    old.example, old.collocations, old.notes,
+    old.ease_factor, old.interval_days, old.repetitions, old.due_date,
+    coalesce((select array_agg(t.name order by t.name)
+              from public.word_topics wt join public.topics t on t.id = wt.topic_id
+              where wt.word_id = old.id), '{}'),
+    old.created_at);
+  return old;
+end;
+$$;
+
+create trigger words_archive_before_delete
+  before delete on public.words
+  for each row execute function public.archive_deleted_word();
+
+-- Lịch sử ôn giữ nguyên word_id (tra được ở words hoặc deleted_words) → bỏ khoá ngoại.
+-- Khi ghi, policy "own reviews" (mục 9) vẫn kiểm tra word_id là từ của mình.
+alter table public.reviews drop constraint reviews_word_id_fkey;

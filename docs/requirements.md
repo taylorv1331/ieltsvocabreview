@@ -82,7 +82,7 @@ Mỗi dòng dưới đây là một test case. Story chỉ được coi là xong
 
 **US-05 — Sửa / xoá từ** *(AC do mình bổ sung khi code, theo cùng mẫu)*
 - AC-05.1 — Given đang xem một từ, When sửa nội dung và lưu, Then nội dung mới hiện ngay; trạng thái SRS giữ nguyên.
-- AC-05.2 — Given bấm "Xoá", Then app hỏi xác nhận; xác nhận xong thì từ và các liên kết chủ đề của từ đó bị xoá. Lịch sử ôn (`reviews`) của từ được giữ lại nhưng không còn gắn với từ đã xoá, để số lượt ôn và streak (AC-07) không thay đổi. *(sửa 2026-10-13)*
+- AC-05.2 — Given bấm "Xoá", Then app hỏi xác nhận; xác nhận xong thì từ biến mất khỏi Kho từ và bài ôn, các liên kết chủ đề bị xoá. Toàn bộ thông tin của từ (nội dung, trạng thái SRS, tên chủ đề, thời điểm xoá) được lưu vào `deleted_words`; lịch sử ôn giữ nguyên và vẫn tra được thuộc từ nào, để số lượt ôn và streak (AC-07) không thay đổi. MVP không có màn hình xem từ đã xoá. *(sửa 2026-10-14)*
 
 **US-06 — Chủ đề**
 - AC-06.1 — Given đang thêm hoặc sửa từ, Then chọn được 0, 1 hoặc nhiều chủ đề, và tạo được chủ đề mới ngay tại đó.
@@ -178,6 +178,7 @@ Chi tiết cột, ràng buộc và RLS: xem `docs/schema.sql`.
 | `word_topics` | Một cặp từ – chủ đề (bảng nối nhiều-nhiều) | US-06, US-10 |
 | `words` | Một thẻ từ, gồm nội dung học và 4 trường trạng thái SRS | US-02, US-03, US-05, US-08, US-10 |
 | `reviews` | Một lần bấm nút chấm điểm (chỉ ghi thêm, không sửa) | US-04, US-07 |
+| `deleted_words` | Bản lưu trữ của một từ đã xoá (database tự ghi khi xoá) | US-05 |
 | `import_fields` | Một cột của file mẫu CSV (cấu hình chung, chỉ sửa trong Supabase Dashboard) | US-09, US-10 |
 
 Quan hệ: `auth.users` 1–1 `profiles`; `auth.users` 1–n `topics`, `words`, `reviews`; `words` n–n `topics` qua `word_topics`; `words` 1–n `reviews`.
