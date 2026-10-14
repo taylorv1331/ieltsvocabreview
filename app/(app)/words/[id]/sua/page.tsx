@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { toWordInput } from "@/lib/words";
+import { toWordContent, toWordInput, WORD_CONTENT_SELECT } from "@/lib/words";
 import WordForm from "@/components/WordForm";
 
 export default async function EditWordPage({ params }: PageProps<"/words/[id]/sua">) {
@@ -8,7 +8,7 @@ export default async function EditWordPage({ params }: PageProps<"/words/[id]/su
   const supabase = await createClient();
   const { data: word } = await supabase
     .from("words")
-    .select("id, term, part_of_speech, meaning_vi, definition_en, example, collocations, notes")
+    .select(`id, ${WORD_CONTENT_SELECT}`)
     .eq("id", id)
     .maybeSingle();
   if (!word) notFound();
@@ -16,7 +16,7 @@ export default async function EditWordPage({ params }: PageProps<"/words/[id]/su
   return (
     <section className="mx-auto max-w-xl">
       <h1 className="text-2xl font-bold">Sửa từ</h1>
-      <WordForm wordId={word.id} initial={toWordInput(word)} />
+      <WordForm wordId={word.id} initial={toWordInput(toWordContent(word))} />
     </section>
   );
 }

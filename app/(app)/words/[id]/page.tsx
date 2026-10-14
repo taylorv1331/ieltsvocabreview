@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateVN, relativeDayLabel, todayVN } from "@/lib/date";
 import WordDetails from "@/components/WordDetails";
+import { toWordContent, WORD_CONTENT_SELECT } from "@/lib/words";
 import DeleteWordButton from "@/components/DeleteWordButton";
 import FlashMessage from "@/components/FlashMessage";
 
@@ -13,7 +14,7 @@ export default async function WordDetailPage({ params, searchParams }: PageProps
   const supabase = await createClient();
   const { data: word } = await supabase
     .from("words")
-    .select("id, term, part_of_speech, meaning_vi, definition_en, example, collocations, notes, due_date")
+    .select(`id, due_date, ${WORD_CONTENT_SELECT}`)
     .eq("id", id)
     .maybeSingle();
   // Không có hoặc không phải từ của mình (RLS) → trang "Không tìm thấy"
@@ -38,7 +39,7 @@ export default async function WordDetailPage({ params, searchParams }: PageProps
       )}
 
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <WordDetails word={word} />
+        <WordDetails word={toWordContent(word)} />
       </article>
 
       {/* Chỉ để xem; sửa nội dung không làm đổi lịch ôn (AC-05.1) */}

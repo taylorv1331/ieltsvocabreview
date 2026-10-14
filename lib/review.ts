@@ -1,20 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { toWordContent, WORD_CONTENT_SELECT, type WordContent } from "./words";
 
 // Một thẻ ôn: đủ thông tin để hiện mặt trước (term) và mặt sau (AC-04.1)
-export type DueWord = {
-  id: string;
-  term: string;
-  part_of_speech: string | null;
-  meaning_vi: string;
-  definition_en: string | null;
-  example: string | null;
-  collocations: string | null;
-  notes: string | null;
-  due_date: string;
-};
-
-const DUE_WORD_COLUMNS =
-  "id, term, part_of_speech, meaning_vi, definition_en, example, collocations, notes, due_date";
+export type DueWord = WordContent & { id: string; due_date: string };
 
 // AC-03.1: các từ có ngày ôn ≤ hôm nay.
 // Quá hạn lâu nhất lên trước (due_date tăng dần); cùng ngày thì từ thêm trước ôn trước (created_at).
@@ -23,12 +11,12 @@ const DUE_WORD_COLUMNS =
 export async function getDueWords(supabase: SupabaseClient, today: string): Promise<DueWord[]> {
   const { data, error } = await supabase
     .from("words")
-    .select(DUE_WORD_COLUMNS)
+    .select(`id, due_date, ${WORD_CONTENT_SELECT}`)
     .lte("due_date", today)
     .order("due_date", { ascending: true })
     .order("created_at", { ascending: true });
   if (error) throw error;
-  return data;
+  return data.map((row) => ({ id: row.id, due_date: row.due_date, ...toWordContent(row) }));
 }
 
 // AC-03.2: ngày ôn kế tiếp = due_date nhỏ nhất sau hôm nay; null nếu không còn từ nào phía sau

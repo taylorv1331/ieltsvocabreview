@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import FlashMessage from "@/components/FlashMessage";
 import TruncatedText from "@/components/TruncatedText";
-import { softHyphenate } from "@/lib/words";
+import { meaningsSummary, softHyphenate } from "@/lib/words";
 
 export default async function WordsPage({ searchParams }: PageProps<"/words">) {
   const { deleted } = await searchParams;
@@ -11,7 +11,7 @@ export default async function WordsPage({ searchParams }: PageProps<"/words">) {
   // Từ mới thêm lên đầu; RLS chỉ trả về từ của mình
   const { data: words, error } = await supabase
     .from("words")
-    .select("id, term, meaning_vi")
+    .select("id, term, word_senses(sort_order, meaning_vi)")
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -49,8 +49,13 @@ export default async function WordsPage({ searchParams }: PageProps<"/words">) {
               >
                 <div className="min-w-0 flex-1">
                   <p lang="en" className="term-wrap font-medium">{softHyphenate(word.term)}</p>
-                  {/* Nghĩa dài: cắt ở mép phải + "…"; rê chuột (máy tính) hiện ngay nghĩa đầy đủ */}
-                  <TruncatedText text={word.meaning_vi} className="text-sm text-slate-500" />
+                  {/* BR-14: các nghĩa nối bằng " · "; dài thì cắt "…", rê chuột (máy tính) hiện ngay đầy đủ */}
+                  <TruncatedText
+                    text={meaningsSummary(
+                      [...word.word_senses].sort((a, b) => a.sort_order - b.sort_order),
+                    )}
+                    className="text-sm text-slate-500"
+                  />
                 </div>
                 <ChevronRight aria-hidden size={18} className="shrink-0 text-slate-400" />
               </Link>

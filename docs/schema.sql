@@ -294,3 +294,123 @@ create trigger words_archive_before_delete
 -- Lịch sử ôn giữ nguyên word_id (tra được ở words hoặc deleted_words) → bỏ khoá ngoại.
 -- Khi ghi, policy "own reviews" (mục 9) vẫn kiểm tra word_id là từ của mình.
 alter table public.reviews drop constraint reviews_word_id_fkey;
+
+-- =====================================================================
+-- Bổ sung ngày 2026-10-14 (Change Request US-02: nhiều nghĩa). Chỉ chạy phần dưới đây.
+-- Chạy trọn trong một giao dịch: lỗi ở đâu thì không thay đổi gì.
+-- Đợt 1/2: chỉ THÊM, chưa xoá cột cũ (mục 15 sẽ dọn dẹp sau khi code mới lên Vercel).
+-- =====================================================================
+begin;
+
+-- 14a. Link từ điển (AC-02.5): chỉ nhận http:// hoặc https://
+alter table public.words
+  add column dictionary_url text
+  check (dictionary_url is null or dictionary_url ~* '^https?://');
+
+-- 14b. WORD_SENSES: mỗi dòng là một nghĩa của từ (BR-14)
+create table public.word_senses (
+  id              uuid primary key default gen_random_uuid(),
+  word_id         uuid not null references public.words(id) on delete cascade,
+  sort_order      smallint not null check (sort_order between 1 and 3),   -- tối đa 3 nghĩa
+  part_of_speech  text check (part_of_speech in ('noun','verb','adjective','adverb','phrase','other')),
+  meaning_vi      text not null check (char_length(btrim(meaning_vi)) > 0),
+  definition_en   text,
+  example         text,
+  collocations    text,
+  notes           text,
+  created_at      timestamptz not null default now(),
+  unique (word_id, sort_order)
+);
+
+alter table public.word_senses enable row level security;
+-- Không có user_id: quyền kiểm tra qua từ mà nghĩa thuộc về (giống word_topics)
+create policy "own word_senses" on public.word_senses
+  for all
+  using (exists (select 1 from public.words w where w.id = word_id and w.user_id = auth.uid()))
+  with check (exists (select 1 from public.words w where w.id = word_id and w.user_id = auth.uid()));
+
+-- 14c. Chép dữ liệu hiện có: mỗi từ → "Nghĩa 1"
+insert into public.word_senses
+  (word_id, sort_order, part_of_speech, meaning_vi, definition_en, example, collocations, notes)
+select id, 1, part_of_speech, meaning_vi, definition_en, example, collocations, notes
+from public.words;
+
+-- Cột cũ chưa xoá (để dành cho mục 15) nhưng không còn bắt buộc
+alter table public.words alter column meaning_vi drop not null;
+
+-- 14d. Lưu trữ từ đã xoá: thêm link + danh sách nghĩa (dạng JSON); chép nội dung các dòng cũ vào
+alter table public.deleted_words
+  add column dictionary_url text,
+  add column senses jsonb not null default '[]'::jsonb;
+update public.deleted_words
+set senses = jsonb_build_array(jsonb_strip_nulls(jsonb_build_object(
+  'sort_order', 1, 'part_of_speech', part_of_speech, 'meaning_vi', meaning_vi,
+  'definition_en', definition_en, 'example', example, 'collocations', collocations, 'notes', notes)));
+alter table public.deleted_words alter column meaning_vi drop not null;
+
+create or replace function public.archive_deleted_word()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  insert into public.deleted_words (
+    id, user_id, term, dictionary_url, senses,
+    ease_factor, interval_days, repetitions, due_date, topics, created_at)
+  values (
+    old.id, old.user_id, old.term, old.dictionary_url,
+    coalesce((select jsonb_agg(jsonb_strip_nulls(to_jsonb(s) - 'id' - 'word_id' - 'created_at')
+                               order by s.sort_order)
+              from public.word_senses s where s.word_id = old.id), '[]'::jsonb),
+    old.ease_factor, old.interval_days, old.repetitions, old.due_date,
+    coalesce((select array_agg(t.name order by t.name)
+              from public.word_topics wt join public.topics t on t.id = wt.topic_id
+              where wt.word_id = old.id), '{}'),
+    old.created_at);
+  return old;
+end;
+$$;
+
+-- 14e. Lưu từ + các nghĩa trong MỘT giao dịch (thêm mới khi p_word_id rỗng, ngược lại là sửa)
+create function public.save_word(
+  p_word_id        uuid,
+  p_term           text,
+  p_dictionary_url text,
+  p_senses         jsonb,   -- mảng 1–3 nghĩa theo thứ tự
+  p_due_date       date     -- chỉ dùng khi thêm mới (todayVN() từ app, BR-00)
+) returns uuid
+language plpgsql security invoker set search_path = '' as $$
+declare
+  v_id uuid;
+begin
+  if jsonb_array_length(p_senses) not between 1 and 3 then
+    raise exception 'Mỗi từ cần 1–3 nghĩa';
+  end if;
+
+  if p_word_id is null then
+    insert into public.words (term, dictionary_url, due_date)
+    values (p_term, p_dictionary_url, p_due_date)
+    returning id into v_id;
+  else
+    -- Chỉ sửa từ và link; 4 trường SRS giữ nguyên (AC-05.1)
+    update public.words set term = p_term, dictionary_url = p_dictionary_url
+    where id = p_word_id
+    returning id into v_id;
+    if v_id is null then
+      raise exception 'Không tìm thấy từ %', p_word_id;
+    end if;
+    delete from public.word_senses where word_id = v_id;
+  end if;
+
+  insert into public.word_senses
+    (word_id, sort_order, part_of_speech, meaning_vi, definition_en, example, collocations, notes)
+  select v_id, s.ord::smallint,
+         nullif(s.x->>'part_of_speech', ''), s.x->>'meaning_vi',
+         nullif(s.x->>'definition_en', ''), nullif(s.x->>'example', ''),
+         nullif(s.x->>'collocations', ''), nullif(s.x->>'notes', '')
+  from jsonb_array_elements(p_senses) with ordinality as s(x, ord);
+
+  return v_id;
+end;
+$$;
+revoke execute on function public.save_word(uuid, text, text, jsonb, date) from public, anon;
+grant execute on function public.save_word(uuid, text, text, jsonb, date) to authenticated;
+
+commit;

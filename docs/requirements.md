@@ -43,7 +43,7 @@ Ràng buộc rút ra:
 | ID | User story | Ưu tiên |
 | --- | --- | --- |
 | US-01 | Là người học, mình muốn đăng nhập bằng magic link hoặc mã 6 số gửi qua email (không cần mật khẩu), để từ vựng của mình được lưu riêng và dùng được trên mọi thiết bị | Must |
-| US-02 | Là người học, mình muốn thêm một từ kèm nghĩa, từ loại, câu ví dụ và collocation, để biết cách dùng chứ không chỉ biết nghĩa | Must |
+| US-02 | Là người học, mình muốn thêm một từ kèm link từ điển và tối đa 3 khối nghĩa (mỗi khối gồm từ loại, nghĩa, định nghĩa, câu ví dụ, collocation, ghi chú), để ghi được từ có nhiều từ loại hoặc nhiều nghĩa và biết cách dùng chứ không chỉ biết nghĩa *(Change Request 2026-10-14)* | Must |
 | US-03 | Là người học, mình muốn mỗi ngày chỉ thấy những từ đến hạn ôn, để không tốn thời gian vào từ đã nhớ chắc | Must |
 | US-04 | Là người học, mình muốn tự chấm mức nhớ của từng từ sau khi lật thẻ, để app tính lại lịch ôn cho phù hợp | Must |
 | US-05 | Là người học, mình muốn sửa hoặc xoá một từ, để kho từ luôn chính xác | Must |
@@ -67,21 +67,23 @@ Mỗi dòng dưới đây là một test case. Story chỉ được coi là xong
 - AC-01.7 — Given nhập mã sai, đã dùng hoặc đã hết hạn, Then hiện thông báo lỗi; vẫn nhập lại được hoặc gửi mã mới. *(Change Request 2026-10-13)*
 
 **US-02 — Thêm từ**
-- AC-02.1 — Given đang ở form thêm từ, When bỏ trống ô "Từ vựng" hoặc "Nghĩa tiếng Việt", Then không lưu được và hiện thông báo lỗi.
+- AC-02.1 — Given đang ở form thêm từ, When bỏ trống ô "Từ vựng", hoặc ô "Nghĩa tiếng Việt" của khối nghĩa 1, hoặc của khối nghĩa 2/3 đã nhập ô khác, Then không lưu được và hiện thông báo lỗi ngay dưới ô đó. *(Change Request 2026-10-14)*
 - AC-02.2 — Given từ "mitigate" đã có, When thêm "Mitigate" lần nữa, Then app cảnh báo trùng (không phân biệt hoa thường).
 - AC-02.3 — Given thêm từ thành công, Then từ đó đến hạn ôn ngay hôm nay.
+- AC-02.4 — Given đang thêm hoặc sửa từ, When bấm "+ Thêm nghĩa của từ" ở cuối khối nghĩa, Then hiện thêm một khối nghĩa mới bên dưới; tối đa 3 khối, đủ 3 khối thì dòng "+ Thêm nghĩa của từ" biến mất. Không có nút xoá khối: khối 2/3 để trống hoàn toàn thì tự bỏ qua khi lưu; khi sửa từ, muốn bỏ một nghĩa thì xoá trống toàn bộ ô của khối đó. *(Change Request 2026-10-14)*
+- AC-02.5 — Given đã nhập "Từ vựng", When bấm "Tạo link Cambridge", Then ô link tự điền `https://dictionary.cambridge.org/dictionary/english/<từ>` (chữ thường, dấu cách đổi thành "-") và vẫn sửa tay được. Ô link không bắt buộc; chỉ nhận link bắt đầu bằng `http://` hoặc `https://`. *(Change Request 2026-10-14)*
 
 **US-03 — Danh sách ôn hôm nay**
 - AC-03.1 — Given kho có 50 từ, 8 từ có ngày ôn ≤ hôm nay, When mở màn hình Ôn tập, Then chỉ 8 từ đó hiện ra, từ quá hạn lâu nhất hiện trước.
 - AC-03.2 — Given không còn từ nào đến hạn, Then hiện thông báo "Xong bài hôm nay" và ngày ôn kế tiếp.
 
 **US-04 — Chấm mức nhớ**
-- AC-04.1 — Given đang xem mặt trước thẻ (chỉ có từ), When bấm "Xem đáp án", Then hiện nghĩa, từ loại, định nghĩa tiếng Anh, ví dụ, collocation, ghi chú (ô trống thì ẩn) và 4 nút: Quên / Khó / Nhớ / Dễ.
+- AC-04.1 — Given đang xem mặt trước thẻ (chỉ có từ), When bấm "Xem đáp án", Then hiện tất cả khối nghĩa theo thứ tự (mỗi khối: từ loại, nghĩa, định nghĩa tiếng Anh, ví dụ, collocation, ghi chú; ô trống thì ẩn), nút mở link từ điển (nếu có) và 4 nút: Quên / Khó / Nhớ / Dễ. *(sửa 2026-10-14)*
 - AC-04.2 — Given bấm một nút, Then ngày ôn tiếp theo được tính theo BR-01 → BR-05 và một dòng lịch sử ôn được lưu vào `reviews`.
 - AC-04.3 — Given bấm "Quên", Then từ đó quay lại cuối phiên ôn hôm nay.
 
 **US-05 — Sửa / xoá từ** *(AC do mình bổ sung khi code, theo cùng mẫu)*
-- AC-05.1 — Given đang xem một từ, When sửa nội dung và lưu, Then nội dung mới hiện ngay; trạng thái SRS giữ nguyên.
+- AC-05.1 — Given đang xem một từ, When sửa nội dung (kể cả thêm hoặc sửa khối nghĩa và link từ điển) và lưu, Then nội dung mới hiện ngay; trạng thái SRS giữ nguyên. *(sửa 2026-10-14)*
 - AC-05.2 — Given bấm "Xoá", Then app hỏi xác nhận; xác nhận xong thì từ biến mất khỏi Kho từ và bài ôn, các liên kết chủ đề bị xoá. Toàn bộ thông tin của từ (nội dung, trạng thái SRS, tên chủ đề, thời điểm xoá) được lưu vào `deleted_words`; lịch sử ôn giữ nguyên và vẫn tra được thuộc từ nào, để số lượt ôn và streak (AC-07) không thay đổi. MVP không có màn hình xem từ đã xoá. *(sửa 2026-10-14)*
 
 **US-06 — Chủ đề**
@@ -115,6 +117,7 @@ Mỗi dòng dưới đây là một test case. Story chỉ được coi là xong
 | --- | --- |
 | BR-00 | "Hôm nay" luôn tính theo múi giờ **Asia/Ho_Chi_Minh** (UTC+7). Server Vercel và Postgres chạy giờ UTC, nên app phải tự tính ngày rồi truyền `due_date` khi thêm/cập nhật từ và khi lọc "đến hạn hôm nay"; không dựa vào `current_date` của database |
 | BR-13 | **Magic link và mã 6 số.** a) Email đăng nhập chứa **cả link và mã 6 số**; cả hai có hiệu lực **1 giờ** kể từ lúc gửi và chỉ dùng được **1 lần** — dùng một cách thì cách còn lại cũng hết hiệu lực. Link hoặc mã hết hạn/đã dùng thì xử lý theo AC-01.4 / AC-01.7 *(sửa 2026-10-13)*. b) Sau mỗi lần gửi thành công, nút gửi bị khoá **60 giây** và hiện đếm ngược từ "Gửi lại sau 60 giây" giảm dần về 1; hết đếm ngược thì nút bấm lại được. c) Khi Supabase từ chối vì gửi quá nhiều, hiện thông báo tiếng Việt: "Bạn đã yêu cầu quá nhiều link. Vui lòng thử lại sau ít phút." (không hiện lỗi tiếng Anh gốc). d) Thông báo gửi thành công có nhắc: "Link có hiệu lực trong 1 giờ." e) Giới hạn gửi: mỗi email cách nhau tối thiểu 60 giây; toàn hệ thống tối đa **30 email/giờ**. f) Email đăng nhập gửi qua custom SMTP (Gmail), nội dung bằng tiếng Việt, link dạng `/auth/confirm?token_hash=…&type=email` để mở được trên thiết bị khác. g) Giới hạn thử mã theo Supabase: tối đa 30 lần mỗi 5 phút cho mỗi địa chỉ IP *(thêm 2026-10-13)*. *Mục a, e, f, g là cấu hình trên Supabase Dashboard (Authentication → Sign In / Providers → Email, Rate Limits, Emails), không nằm trong code; đổi cấu hình thì cập nhật lại BR này.* |
+| BR-14 | **Nhiều nghĩa cho một từ** *(Change Request 2026-10-14)*. Mỗi từ có từ 1 đến 3 nghĩa (bảng `word_senses`), hiện theo thứ tự đã nhập; nhiều nghĩa của cùng một từ loại có thể ghi chung trong một khối. Lịch ôn (SRS) tính theo từ, không theo nghĩa. Link từ điển chỉ là liên kết mở trang ngoài trong tab mới; app không phát âm và không gọi API từ điển, nên vẫn nằm trong phạm vi MVP (mục 1). Trong Kho từ, mỗi dòng hiện các nghĩa nối bằng " · ", dài thì cắt "…" |
 
 ### 4.2 Thuật toán SRS (SM-2 rút gọn)
 
@@ -156,7 +159,7 @@ Nếu ở lần 3 bấm Quên: `interval_days` = 0, `repetitions` = 0, `ease_fac
 | --- | --- |
 | BR-06 | File mẫu và bảng hướng dẫn được dựng **tại thời điểm tải** từ các dòng `is_active` của `import_fields`, xếp theo `sort_order`. Không lưu file mẫu tĩnh trong code. Trang "Nhập từ" luôn đọc dữ liệu mới, không cache |
 | BR-07 | Hàng tiêu đề dùng `key` (tên máy, không dấu) để khớp chính xác với database; tên tiếng Việt (`label_vi`) chỉ hiện trong bảng hướng dẫn |
-| BR-08 | Mỗi `key` trùng tên một cột của `words`, riêng `topics` được tách ra và lưu vào `topics` + `word_topics`. Cột có `key` không khớp cột nào của `words` (và không phải `topics`) bị bỏ qua |
+| BR-08 | Mỗi `key` trùng tên một cột của `words`, riêng `topics` được tách ra và lưu vào `topics` + `word_topics`. Cột có `key` không khớp cột nào của `words` (và không phải `topics`) bị bỏ qua *(Mô hình nhiều nghĩa từ 2026-10-14: cách nhập nhiều nghĩa bằng CSV sẽ được thiết kế lại khi làm US-09/US-10.)* |
 | BR-09 | Thiếu cột bắt buộc thì từ chối cả file. Cột lạ thì bỏ qua và cảnh báo |
 | BR-10 | Kiểm tra từng dòng: ô bắt buộc không trống, giá trị kiểu `enum` nằm trong `allowed_values`, từ chưa có trong kho (không phân biệt hoa thường, kể cả trùng giữa các dòng trong cùng file). Dòng sai bị bỏ qua và ghi vào báo cáo; dòng đúng vẫn được nhập |
 | BR-11 | Cột kiểu `list` được tách theo dấu `;` hoặc `,` (Notion xuất multi-select bằng dấu phẩy), rồi bỏ khoảng trắng thừa và giá trị rỗng. Với `collocations`, sau khi tách thì lưu lại dưới dạng chuỗi nối bằng `; ` |
@@ -177,6 +180,7 @@ Chi tiết cột, ràng buộc và RLS: xem `docs/schema.sql`.
 | `topics` | Một chủ đề IELTS do người dùng tự tạo | US-06 |
 | `word_topics` | Một cặp từ – chủ đề (bảng nối nhiều-nhiều) | US-06, US-10 |
 | `words` | Một thẻ từ, gồm nội dung học và 4 trường trạng thái SRS | US-02, US-03, US-05, US-08, US-10 |
+| `word_senses` | Một nghĩa của từ (1–3 nghĩa mỗi từ): từ loại, nghĩa, định nghĩa, ví dụ, collocation, ghi chú | US-02, US-04, US-05 |
 | `reviews` | Một lần bấm nút chấm điểm (chỉ ghi thêm, không sửa) | US-04, US-07 |
 | `deleted_words` | Bản lưu trữ của một từ đã xoá (database tự ghi khi xoá) | US-05 |
 | `import_fields` | Một cột của file mẫu CSV (cấu hình chung, chỉ sửa trong Supabase Dashboard) | US-09, US-10 |
