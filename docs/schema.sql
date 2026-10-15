@@ -414,3 +414,16 @@ revoke execute on function public.save_word(uuid, text, text, jsonb, date) from 
 grant execute on function public.save_word(uuid, text, text, jsonb, date) to authenticated;
 
 commit;
+
+-- =====================================================================
+-- Bổ sung ngày 2026-10-15 (Change Request US-02, đợt 2/2: dọn dẹp).
+-- CHỈ CHẠY SAU KHI code dùng word_senses đã lên Vercel. Chỉ chạy phần dưới đây.
+-- =====================================================================
+
+-- 15. Bỏ 6 cột nội dung cũ: nội dung nghĩa giờ nằm ở word_senses (words) và senses (deleted_words)
+alter table public.words
+  drop column part_of_speech, drop column meaning_vi, drop column definition_en,
+  drop column example, drop column collocations, drop column notes;
+alter table public.deleted_words
+  drop column part_of_speech, drop column meaning_vi, drop column definition_en,
+  drop column example, drop column collocations, drop column notes;
