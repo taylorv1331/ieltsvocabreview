@@ -22,6 +22,7 @@ Nếu yêu cầu trong lúc chat mâu thuẫn với hai file trên, hoặc tài 
 ## Quy tắc bắt buộc
 - **Giao diện chỉ tiếng Việt.** Không dùng thư viện i18n; chữ trên giao diện viết thẳng bằng tiếng Việt.
   - *Ngoại lệ có chủ ý (Taylor duyệt 2026-10-02):* câu phản hồi khi chấm **Dễ** trong phiên ôn là "Thật xuất sắc, you're the best 🤩". Không coi đây là lỗi; mọi chữ khác vẫn phải bằng tiếng Việt.
+  - *Ngoại lệ (Taylor duyệt 2026-10-15):* trang kỹ thuật `/api-docs` dùng Swagger UI có nút và nhãn tiếng Anh (Try it out, Execute…). Đây là trang để trình bày lớp business logic, không phải màn hình cho người học; tiêu đề và mô tả API vẫn viết tiếng Việt.
 - **Mobile-first:** thiết kế cho màn hình ~375px trước, nút bấm cao tối thiểu 44px.
 - **Đăng nhập chỉ bằng magic link hoặc mã 6 số trong cùng email** (`supabase.auth.signInWithOtp`, xác nhận mã bằng `verifyOtp`). Không có form mật khẩu. Middleware chặn mọi trang khi chưa đăng nhập (AC-01.1).
 - **Bảo mật:**

@@ -1,0 +1,234 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Ôn từ vựng IELTS — Business logic API",
+    "version": "1.0.0",
+    "description": "Các API trình diễn lớp **business logic** của app. Mỗi API gọi đúng hàm mà app đang dùng (không viết lại logic) và **không đọc / ghi dữ liệu người dùng**.\n\n- Quy tắc SRS: `lib/srs.ts` — BR-01 → BR-05\n- Kiểm tra dữ liệu từ: `lib/words.ts` — AC-02.1, AC-02.4, AC-02.5\n- Ngày theo giờ Việt Nam: `lib/date.ts` — BR-00\n\nNguồn yêu cầu: `docs/requirements.md` trong repo."
+  },
+  "servers": [{ "url": "/", "description": "Cùng địa chỉ với app (localhost hoặc Vercel)" }],
+  "tags": [
+    { "name": "SRS", "description": "Thuật toán lặp lại ngắt quãng (SM-2 rút gọn), mục 4.2 của requirements" },
+    { "name": "Từ vựng", "description": "Quy tắc nhập từ: bắt buộc, nhiều nghĩa, link từ điển" },
+    { "name": "Ngày giờ", "description": "BR-00: \"hôm nay\" theo Asia/Ho_Chi_Minh" }
+  ],
+  "paths": {
+    "/api/srs/preview": {
+      "post": {
+        "tags": ["SRS"],
+        "summary": "Tính lịch ôn mới sau khi chấm một thẻ (BR-01 → BR-05)",
+        "description": "Nhập trạng thái hiện tại của một từ và nút người học bấm → trả về trạng thái mới và ngày ôn tới. Đây là đúng hàm `schedule()` mà phiên ôn dùng trước khi ghi vào database qua hàm `rate_word`.\n\n| rating | Nút | Quy tắc |\n|---|---|---|\n| 0 | Quên | BR-01 |\n| 1 | Khó | BR-02 |\n| 2 | Nhớ | BR-03 |\n| 3 | Dễ | BR-04 |",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SrsPreviewRequest" },
+              "examples": {
+                "chuan_lan1": {
+                  "summary": "Ví dụ chuẩn — lần 1: từ mới, bấm Nhớ (→ 1 ngày)",
+                  "value": { "ease_factor": 2.5, "interval_days": 0, "repetitions": 0, "rating": 2, "today": "2026-10-01" }
+                },
+                "chuan_lan2": {
+                  "summary": "Ví dụ chuẩn — lần 2: bấm Nhớ (→ 3 ngày)",
+                  "value": { "ease_factor": 2.5, "interval_days": 1, "repetitions": 1, "rating": 2, "today": "2026-10-02" }
+                },
+                "chuan_lan3": {
+                  "summary": "Ví dụ chuẩn — lần 3: bấm Nhớ (→ round(3 × 2.5) = 8 ngày)",
+                  "value": { "ease_factor": 2.5, "interval_days": 3, "repetitions": 2, "rating": 2, "today": "2026-10-05" }
+                },
+                "chuan_lan4": {
+                  "summary": "Ví dụ chuẩn — lần 4: bấm Nhớ (→ 8 × 2.5 = 20 ngày)",
+                  "value": { "ease_factor": 2.5, "interval_days": 8, "repetitions": 3, "rating": 2, "today": "2026-10-13" }
+                },
+                "quen_lan3": {
+                  "summary": "Bấm Quên ở lần 3 (→ 0 ngày, ease 2.3, repetitions 0)",
+                  "value": { "ease_factor": 2.5, "interval_days": 3, "repetitions": 2, "rating": 0, "today": "2026-10-05" }
+                },
+                "kho_tu_moi": {
+                  "summary": "Bấm Khó với từ mới (→ tối thiểu 1 ngày, ease 2.35)",
+                  "value": { "ease_factor": 2.5, "interval_days": 0, "repetitions": 0, "rating": 1, "today": "2026-10-01" }
+                },
+                "de_roi_nho": {
+                  "summary": "Đã bấm Dễ lần đầu (4 ngày) rồi bấm Nhớ (→ max(3, 4) = 4 ngày, không co lại)",
+                  "value": { "ease_factor": 2.65, "interval_days": 4, "repetitions": 1, "rating": 2, "today": "2026-10-05" }
+                },
+                "ease_day": {
+                  "summary": "Quên khi ease đã thấp 1.4 (→ kẹp ở 1.3, BR-05)",
+                  "value": { "ease_factor": 1.4, "interval_days": 5, "repetitions": 3, "rating": 0, "today": "2026-10-01" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Trạng thái trước, quy tắc áp dụng và trạng thái sau",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SrsPreviewResponse" } } }
+          },
+          "400": {
+            "description": "Dữ liệu gửi lên không hợp lệ",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Errors" } } }
+          }
+        }
+      }
+    },
+    "/api/words/validate": {
+      "post": {
+        "tags": ["Từ vựng"],
+        "summary": "Kiểm tra dữ liệu một từ trước khi lưu (AC-02.1, AC-02.4, AC-02.5)",
+        "description": "Cùng quy tắc mà form Thêm / Sửa từ và server dùng:\n\n- **AC-02.1**: bắt buộc \"Từ vựng\" và \"Nghĩa tiếng Việt\" của khối 1, hoặc của khối 2/3 đã nhập ô khác\n- **AC-02.4**: tối đa 3 khối nghĩa; khối 2/3 trống hoàn toàn thì bỏ qua\n- **AC-02.5**: link từ điển không bắt buộc, chỉ nhận `http://` hoặc `https://`\n\nTrả về `will_save` (dữ liệu sẽ được lưu sau khi chuẩn hoá) hoặc `errors` (lỗi theo từng ô; `senses` đánh số từ 0 = khối 1).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WordInput" },
+              "examples": {
+                "hop_le_2_nghia": {
+                  "summary": "Hợp lệ: \"long\" có 2 nghĩa, khối 3 trống được bỏ qua",
+                  "value": {
+                    "term": "long",
+                    "dictionary_url": "https://dictionary.cambridge.org/dictionary/english/long",
+                    "senses": [
+                      { "part_of_speech": "adjective", "meaning_vi": "dài; lâu", "collocations": "a long time\nlong hair" },
+                      { "part_of_speech": "verb", "meaning_vi": "mong mỏi, khao khát", "example": "She longed for a chance to travel." },
+                      {}
+                    ]
+                  }
+                },
+                "thieu_bat_buoc": {
+                  "summary": "Lỗi AC-02.1: thiếu từ vựng và thiếu nghĩa ở khối 1",
+                  "value": { "term": "   ", "senses": [{ "part_of_speech": "noun" }] }
+                },
+                "khoi2_thieu_nghia": {
+                  "summary": "Lỗi AC-02.1: khối 2 có chọn từ loại nhưng thiếu nghĩa",
+                  "value": {
+                    "term": "long",
+                    "senses": [{ "meaning_vi": "dài" }, { "part_of_speech": "verb" }]
+                  }
+                },
+                "link_sai": {
+                  "summary": "Lỗi AC-02.5: link không bắt đầu bằng http(s)",
+                  "value": { "term": "long", "dictionary_url": "javascript:alert(1)", "senses": [{ "meaning_vi": "dài" }] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kết quả kiểm tra",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WordValidateResponse" } } }
+          },
+          "400": {
+            "description": "Nội dung gửi lên sai định dạng",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Errors" } } }
+          }
+        }
+      }
+    },
+    "/api/today": {
+      "get": {
+        "tags": ["Ngày giờ"],
+        "summary": "\"Hôm nay\" theo giờ Việt Nam (BR-00)",
+        "description": "Server Vercel và Postgres chạy giờ UTC. Từ 0:00 đến 7:00 sáng giờ Việt Nam, ngày UTC vẫn là hôm trước — vì vậy app luôn tự tính `today_vn` và truyền `due_date` tường minh, không dựa vào `current_date` của database.",
+        "responses": {
+          "200": {
+            "description": "Ngày theo giờ Việt Nam và giờ UTC của server",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TodayResponse" } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SrsState": {
+        "type": "object",
+        "required": ["ease_factor", "interval_days", "repetitions"],
+        "properties": {
+          "ease_factor": { "type": "number", "minimum": 1.3, "example": 2.5, "description": "Hệ số độ dễ, không bao giờ < 1.3" },
+          "interval_days": { "type": "integer", "minimum": 0, "example": 3, "description": "Số ngày giữa lần ôn vừa rồi và lần tới" },
+          "repetitions": { "type": "integer", "minimum": 0, "example": 2, "description": "Số lần nhớ đúng liên tiếp" }
+        }
+      },
+      "SrsPreviewRequest": {
+        "allOf": [
+          { "$ref": "#/components/schemas/SrsState" },
+          {
+            "type": "object",
+            "required": ["rating"],
+            "properties": {
+              "rating": { "type": "integer", "enum": [0, 1, 2, 3], "example": 2, "description": "0 Quên · 1 Khó · 2 Nhớ · 3 Dễ" },
+              "today": { "type": "string", "format": "date", "example": "2026-10-05", "description": "Không bắt buộc. Bỏ trống = hôm nay theo giờ Việt Nam (BR-00)" }
+            }
+          }
+        ]
+      },
+      "SrsPreviewResponse": {
+        "type": "object",
+        "properties": {
+          "today": { "type": "string", "format": "date" },
+          "before": { "$ref": "#/components/schemas/SrsState" },
+          "rating": { "type": "integer" },
+          "rule": { "type": "string", "description": "Quy tắc nghiệp vụ đã áp dụng" },
+          "after": {
+            "allOf": [
+              { "$ref": "#/components/schemas/SrsState" },
+              { "type": "object", "properties": { "due_date": { "type": "string", "format": "date", "description": "Ngày ôn tới" } } }
+            ]
+          },
+          "note": { "type": "string" }
+        }
+      },
+      "SenseInput": {
+        "type": "object",
+        "description": "Một khối nghĩa. Ô bỏ trống = chuỗi rỗng.",
+        "properties": {
+          "part_of_speech": { "type": "string", "enum": ["", "noun", "verb", "adjective", "adverb", "phrase", "other"] },
+          "meaning_vi": { "type": "string" },
+          "definition_en": { "type": "string" },
+          "example": { "type": "string" },
+          "collocations": { "type": "string", "description": "Mỗi cụm một dòng hoặc cách nhau bằng ;" },
+          "notes": { "type": "string" }
+        }
+      },
+      "WordInput": {
+        "type": "object",
+        "required": ["term", "senses"],
+        "properties": {
+          "term": { "type": "string", "maxLength": 100, "example": "long" },
+          "dictionary_url": { "type": "string", "example": "https://dictionary.cambridge.org/dictionary/english/long" },
+          "senses": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/components/schemas/SenseInput" } }
+        }
+      },
+      "WordValidateResponse": {
+        "type": "object",
+        "properties": {
+          "valid": { "type": "boolean" },
+          "will_save": { "type": "object", "description": "Có khi valid = true: dữ liệu sau khi chuẩn hoá (khối trống đã bỏ, collocation nối bằng \"; \")" },
+          "errors": {
+            "type": "object",
+            "description": "Có khi valid = false",
+            "properties": {
+              "term": { "type": "string" },
+              "dictionary_url": { "type": "string" },
+              "senses": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Lỗi theo vị trí khối: \"0\" = khối 1" }
+            }
+          }
+        }
+      },
+      "TodayResponse": {
+        "type": "object",
+        "properties": {
+          "today_vn": { "type": "string", "format": "date" },
+          "time_zone": { "type": "string", "example": "Asia/Ho_Chi_Minh" },
+          "server_time_utc": { "type": "string", "format": "date-time" },
+          "server_date_utc": { "type": "string", "format": "date" }
+        }
+      },
+      "Errors": {
+        "type": "object",
+        "properties": { "errors": { "type": "array", "items": { "type": "string" } } }
+      }
+    }
+  }
+}

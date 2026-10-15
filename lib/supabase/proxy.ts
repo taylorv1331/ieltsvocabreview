@@ -1,8 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Các đường dẫn ai cũng vào được, không cần đăng nhập
-const PUBLIC_PATHS = ["/login", "/auth"];
+// Các đường dẫn ai cũng vào được, không cần đăng nhập.
+// Nhóm API trình diễn + tài liệu Swagger: không đọc/ghi dữ liệu người dùng.
+const PUBLIC_PATHS = [
+  "/login",
+  "/auth",
+  "/api-docs",
+  "/openapi.json",
+  "/api/srs/preview",
+  "/api/words/validate",
+  "/api/today",
+];
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
