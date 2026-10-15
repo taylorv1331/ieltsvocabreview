@@ -71,7 +71,7 @@ Mỗi dòng dưới đây là một test case. Story chỉ được coi là xong
 - AC-02.2 — Given từ "mitigate" đã có, When thêm "Mitigate" lần nữa, Then app cảnh báo trùng (không phân biệt hoa thường).
 - AC-02.3 — Given thêm từ thành công, Then từ đó đến hạn ôn ngay hôm nay.
 - AC-02.4 — Given đang thêm hoặc sửa từ, When bấm "+ Thêm nghĩa của từ" ở cuối khối nghĩa, Then hiện thêm một khối nghĩa mới bên dưới; tối đa 3 khối, đủ 3 khối thì dòng "+ Thêm nghĩa của từ" biến mất. Không có nút xoá khối: khối 2/3 để trống hoàn toàn thì tự bỏ qua khi lưu; khi sửa từ, muốn bỏ một nghĩa thì xoá trống toàn bộ ô của khối đó. *(Change Request 2026-10-14)*
-- AC-02.5 — Given đã nhập "Từ vựng", When bấm "Tạo link Cambridge", Then ô link tự điền `https://dictionary.cambridge.org/dictionary/english/<từ>` (chữ thường, dấu cách đổi thành "-") và vẫn sửa tay được. Ô link không bắt buộc; chỉ nhận link bắt đầu bằng `http://` hoặc `https://`. *(Change Request 2026-10-14)*
+- AC-02.5 — Given đã nhập "Từ vựng", When bấm "Tạo link Cambridge", Then ô link tự điền `https://dictionary.cambridge.org/dictionary/english/<từ>` (chữ thường, dấu cách đổi thành "-") và vẫn sửa tay được. Bấm "Kiểm tra link" thì mở link đang nhập ở tab mới ngay trên form, không cần lưu từ trước (link trống hoặc sai định dạng thì báo lỗi). Ô link không bắt buộc; chỉ nhận link bắt đầu bằng `http://` hoặc `https://`. *(Change Request 2026-10-14; thêm "Kiểm tra link" 2026-10-15)*
 
 **US-03 — Danh sách ôn hôm nay**
 - AC-03.1 — Given kho có 50 từ, 8 từ có ngày ôn ≤ hôm nay, When mở màn hình Ôn tập, Then chỉ 8 từ đó hiện ra, từ quá hạn lâu nhất hiện trước.

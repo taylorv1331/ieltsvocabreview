@@ -3,10 +3,11 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { ExternalLink, Plus } from "lucide-react";
 import {
   cambridgeUrl,
   EMPTY_SENSE,
+  isHttpUrl,
   MAX_SENSES,
   PARTS_OF_SPEECH,
   TERM_MAX_LENGTH,
@@ -73,6 +74,21 @@ export default function WordForm({ wordId, initial }: { wordId?: string; initial
       return;
     }
     updateUrl(cambridgeUrl(values.term));
+  }
+
+  // AC-02.5: mở link đang nhập ở tab mới để kiểm tra, không cần lưu từ trước
+  function openUrl() {
+    const url = values.dictionary_url.trim();
+    if (!isHttpUrl(url)) {
+      setErrors((e) => ({
+        ...e,
+        dictionary_url: url
+          ? "Link phải bắt đầu bằng http:// hoặc https://"
+          : "Chưa có link để kiểm tra.",
+      }));
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   // AC-02.2: báo trùng ngay khi rời ô "Từ vựng"
@@ -163,7 +179,7 @@ export default function WordForm({ wordId, initial }: { wordId?: string; initial
         hint="Nghe phát âm và xem thêm về từ ở link sau (gợi ý: trang từ điển online của Cambridge)"
         error={errors.dictionary_url}
       >
-        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex flex-col gap-2">
           <input
             id="dictionary_url"
             type="url"
@@ -175,15 +191,25 @@ export default function WordForm({ wordId, initial }: { wordId?: string; initial
             placeholder="https://dictionary.cambridge.org/dictionary/english/long"
             aria-invalid={Boolean(errors.dictionary_url)}
             aria-describedby={errors.dictionary_url ? "dictionary_url-error" : undefined}
-            className={`${inputClass} min-h-11 min-w-0 flex-1`}
+            className={`${inputClass} min-h-11`}
           />
-          <button
-            type="button"
-            onClick={fillCambridge}
-            className="min-h-11 shrink-0 rounded-lg border border-pink-300 px-3 text-sm font-medium text-pink-700 active:bg-pink-50 md:hover:bg-pink-50"
-          >
-            Tạo link Cambridge
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={fillCambridge}
+              className="min-h-11 flex-1 rounded-lg border border-pink-300 px-3 text-sm font-medium text-pink-700 active:bg-pink-50 md:hover:bg-pink-50"
+            >
+              Tạo link Cambridge
+            </button>
+            <button
+              type="button"
+              onClick={openUrl}
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-700 active:bg-slate-100 md:hover:bg-slate-50"
+            >
+              <ExternalLink aria-hidden size={16} />
+              Kiểm tra link
+            </button>
+          </div>
         </div>
       </Field>
 
