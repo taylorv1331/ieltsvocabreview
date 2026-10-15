@@ -42,3 +42,6 @@ next-env.d.ts
 
 # cho phép commit file mẫu biến môi trường (không chứa key thật)
 !.env.local.example
+
+# bộ nhớ đệm của Vitest
+/.vitest
