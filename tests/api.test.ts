@@ -4,7 +4,11 @@ import { POST as validateWord } from "../app/api/words/validate/route";
 import { GET as today } from "../app/api/today/route";
 
 const post = (body: unknown) =>
-  new Request("http://localhost/api", { method: "POST", body: JSON.stringify(body) });
+  new Request("http://localhost/api", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
 describe("POST /api/srs/preview — Ví dụ chuẩn qua API (mục 4.2)", () => {
   it.each([

@@ -57,8 +57,14 @@ export async function updateSession(request: NextRequest) {
     return redirect;
   };
 
-  // AC-01.1: chưa đăng nhập mà mở trang trong app → về trang đăng nhập
-  if (!loggedIn && !isPublic(pathname)) return redirectTo("/login");
+  if (!loggedIn && !isPublic(pathname)) {
+    // API cần đăng nhập: trả lỗi 401 dạng JSON (Swagger / chương trình khác đọc được), không chuyển trang
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Bạn cần đăng nhập để dùng API này." }, { status: 401 });
+    }
+    // AC-01.1: chưa đăng nhập mà mở trang trong app → về trang đăng nhập
+    return redirectTo("/login");
+  }
 
   // Đã đăng nhập rồi thì không cần thấy trang đăng nhập nữa
   if (loggedIn && pathname === "/login") return redirectTo("/");
